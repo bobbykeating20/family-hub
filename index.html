@@ -107,27 +107,21 @@
 <script>
   async function getWeather() {
     try {
-      // Lynchburg coordinates
       const lat = 37.4138;
       const lon = -79.1422;
 
-      // Step 1: Get forecast URL
-      const pointsRes = await fetch(`https://api.weather.gov/points/${lat},${lon}`);
-      const pointsData = await pointsRes.json();
+      const res = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min&timezone=America/New_York`
+      );
 
-      const forecastUrl = pointsData.properties.forecast;
+      const data = await res.json();
 
-      // Step 2: Get forecast
-      const forecastRes = await fetch(forecastUrl);
-      const forecastData = await forecastRes.json();
-
-      const today = forecastData.properties.periods[0];
-
-      const temp = today.temperature;
-      const condition = today.shortForecast;
+      const currentTemp = Math.round(data.current_weather.temperature);
+      const high = Math.round(data.daily.temperature_2m_max[0]);
+      const low = Math.round(data.daily.temperature_2m_min[0]);
 
       document.getElementById("weather").innerHTML =
-        `🌤️ ${temp}° • ${condition} • Lynchburg`;
+        `🌤️ ${currentTemp}° (H:${high}° L:${low}°) • Lynchburg`;
 
     } catch (error) {
       document.getElementById("weather").innerHTML =
@@ -136,6 +130,6 @@
   }
 
   getWeather();
-</script>  
+</script>
 </body>
 </html>
