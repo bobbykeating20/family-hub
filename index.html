@@ -100,6 +100,7 @@
       weekday: 'long',
       month: 'long',
       day: 'numeric',
+      year: 'numeric',
       timeZone: 'America/New_York'
     };
 
@@ -107,7 +108,8 @@
     const dateString = now.toLocaleDateString([], dateOptions);
 
     document.getElementById('clock').innerHTML =
-      `🕒 ${timeString}<br><span style="font-size:18px; opacity:0.8;">${dateString}</span>`;
+      `🕒 ${timeString}<br>
+       <span style="font-size:22px; opacity:0.85;">${dateString}</span>`;
   }
 
   setInterval(updateClock, 1000);
