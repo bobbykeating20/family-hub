@@ -240,51 +240,38 @@
 <script>
   async function getSchedule() {
     try {
-      const url = "https://calendar.google.com/calendar/ical/lbkeating20%40gmail.com/public/basic.ics";
+      const calendarId = "lbkeating20@gmail.com";
 
-      const response = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`);
-      const text = await response.text();
+      const url = `https://clients6.google.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?singleEvents=true&orderBy=startTime&timeMin=${new Date().toISOString()}&maxResults=10`;
 
-      // ✅ Get TODAY in local (Eastern) time
-      const now = new Date();
-      const todayStr =
-        now.getFullYear().toString() +
-        String(now.getMonth() + 1).padStart(2, '0') +
-        String(now.getDate()).padStart(2, '0');
+      const response = await fetch(url);
+      const data = await response.json();
 
-      const events = text.split("BEGIN:VEVENT").slice(1);
+      const events = data.items || [];
+
+      const today = new Date();
+      const todayDate = today.toDateString();
 
       let todaysEvents = [];
 
       events.forEach(event => {
-        const dateMatch = event.match(/DTSTART.*:(\d{8})/);
-        const timeMatch = event.match(/DTSTART.*:(\d{8}T\d{6})/);
-        const titleMatch = event.match(/SUMMARY:(.*)/);
+        const start = new Date(event.start.dateTime || event.start.date);
 
-        if (!titleMatch) return;
+        if (start.toDateString() === todayDate) {
+          let time = "";
 
-        let eventDate = null;
-        let eventTime = "";
+          if (event.start.dateTime) {
+            let hours = start.getHours();
+            const minutes = String(start.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? "PM" : "AM";
+            hours = hours % 12 || 12;
 
-        if (timeMatch) {
-          eventDate = timeMatch[1].substring(0, 8);
+            time = `${hours}:${minutes} ${ampm}`;
+          }
 
-          const rawTime = timeMatch[1].substring(9, 13);
-          let hours = parseInt(rawTime.substring(0, 2));
-          const minutes = rawTime.substring(2, 4);
-
-          const ampm = hours >= 12 ? "PM" : "AM";
-          hours = hours % 12 || 12;
-
-          eventTime = `${hours}:${minutes} ${ampm}`;
-        } else if (dateMatch) {
-          eventDate = dateMatch[1];
-        }
-
-        if (eventDate === todayStr) {
           todaysEvents.push({
-            title: titleMatch[1],
-            time: eventTime
+            title: event.summary,
+            time
           });
         }
       });
@@ -296,11 +283,9 @@
       } else {
         el.innerHTML =
           "📅 Today's Schedule<br>" +
-          todaysEvents
-            .map(e =>
-              `<p>• ${e.time ? e.time + " – " : ""}${e.title}</p>`
-            )
-            .join("");
+          todaysEvents.map(e =>
+            `<p>• ${e.time ? e.time + " – " : ""}${e.title}</p>`
+          ).join("");
       }
 
     } catch (error) {
