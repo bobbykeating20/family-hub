@@ -242,10 +242,9 @@
     try {
       const url = "https://calendar.google.com/calendar/ical/lbkeating20%40gmail.com/public/basic.ics";
 
-      const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-      const data = await response.json();
-
-      const text = data.contents;
+      // ✅ Better proxy
+      const response = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`);
+      const text = await response.text();
 
       const today = new Date().toISOString().split("T")[0];
 
@@ -286,6 +285,6 @@
   }
 
   getSchedule();
-</script>  
+</script>
 </body>
 </html>
