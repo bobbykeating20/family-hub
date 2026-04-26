@@ -3,9 +3,86 @@
 <head>
   <title>Family Hub</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(to bottom, #0a0a0a, #1a1a1a);
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding: 40px;
+      box-sizing: border-box;
+    }
+
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 32px;
+    }
+
+    .middle-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      font-size: 28px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      padding: 20px 30px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+    }
+
+    .schedule {
+      margin-top: 40px;
+      flex-grow: 1;
+      font-size: 24px;
+    }
+
+    .trivia {
+      margin-top: 20px;
+      font-size: 22px;
+      opacity: 0.85;
+    }
+
+    @media (max-width: 768px) {
+      .top-row, .middle-row {
+        flex-direction: column;
+        gap: 15px;
+      }
+    }
+  </style>
 </head>
-<body style="background:black; color:white; font-family:sans-serif; text-align:center;">
-  <h1>Family Hub</h1>
-  <p>Coming soon...</p>
+
+<body>
+  <div class="container">
+
+    <div class="top-row">
+      <div class="card">🕒 12:00 PM</div>
+      <div class="card">☀️ 75° / 60° Lynchburg</div>
+    </div>
+
+    <div class="middle-row">
+      <div class="card">🎂 Next Birthday: Kohen (14 days)</div>
+      <div class="card">✈️ Disney Cruise in 62 days</div>
+    </div>
+
+    <div class="card schedule">
+      📅 Today's Schedule
+      <p>No events yet</p>
+    </div>
+
+    <div class="card trivia">
+      🎬 Disney Trivia: Mickey Mouse's first appearance was in Steamboat Willie.
+    </div>
+
+  </div>
 </body>
 </html>
