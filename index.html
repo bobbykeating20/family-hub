@@ -65,7 +65,7 @@
   <div class="container">
 
     <div class="top-row">
-      <div class="card">🕒 12:00 PM</div>
+      <div class="card" id="clock">🕒 --:--</div>
       <div class="card">☀️ 75° / 60° Lynchburg</div>
     </div>
 
@@ -84,5 +84,25 @@
     </div>
 
   </div>
+<script>
+  function updateClock() {
+    const now = new Date();
+
+    const options = {
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+      timeZone: 'America/New_York'
+    };
+
+    const timeString = now.toLocaleTimeString([], options);
+
+    document.getElementById('clock').innerHTML = "🕒 " + timeString;
+  }
+
+  setInterval(updateClock, 1000);
+  updateClock();
+</script>  
 </body>
 </html>
