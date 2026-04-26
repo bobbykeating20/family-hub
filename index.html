@@ -111,7 +111,7 @@
       const lon = -79.1422;
 
       const res = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min&timezone=America/New_York`
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=America/New_York`
       );
 
       const data = await res.json();
@@ -120,8 +120,18 @@
       const high = Math.round(data.daily.temperature_2m_max[0]);
       const low = Math.round(data.daily.temperature_2m_min[0]);
 
+      // Optional: basic condition mapping
+      const weatherCode = data.current_weather.weathercode;
+      let condition = "Clear";
+
+      if ([1,2,3].includes(weatherCode)) condition = "Partly Cloudy";
+      if ([45,48].includes(weatherCode)) condition = "Foggy";
+      if ([51,53,55,61,63,65].includes(weatherCode)) condition = "Rainy";
+      if ([71,73,75].includes(weatherCode)) condition = "Snowy";
+      if ([95,96,99].includes(weatherCode)) condition = "Stormy";
+
       document.getElementById("weather").innerHTML =
-        `🌤️ ${currentTemp}° (H:${high}° L:${low}°) • Lynchburg`;
+        `🌤️ ${currentTemp}° (H:${high}° L:${low}°) • ${condition} • Lynchburg`;
 
     } catch (error) {
       document.getElementById("weather").innerHTML =
