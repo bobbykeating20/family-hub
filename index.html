@@ -245,8 +245,12 @@
       const response = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`);
       const text = await response.text();
 
-      const today = new Date();
-      const todayStr = today.toISOString().split("T")[0].replace(/-/g, "");
+      // ✅ Get TODAY in local (Eastern) time
+      const now = new Date();
+      const todayStr =
+        now.getFullYear().toString() +
+        String(now.getMonth() + 1).padStart(2, '0') +
+        String(now.getDate()).padStart(2, '0');
 
       const events = text.split("BEGIN:VEVENT").slice(1);
 
@@ -257,31 +261,31 @@
         const timeMatch = event.match(/DTSTART.*:(\d{8}T\d{6})/);
         const titleMatch = event.match(/SUMMARY:(.*)/);
 
-        if (titleMatch) {
-          let eventDate = null;
-          let eventTime = "";
+        if (!titleMatch) return;
 
-          if (timeMatch) {
-            eventDate = timeMatch[1].substring(0, 8);
+        let eventDate = null;
+        let eventTime = "";
 
-            const rawTime = timeMatch[1].substring(9, 13);
-            let hours = parseInt(rawTime.substring(0, 2));
-            const minutes = rawTime.substring(2, 4);
+        if (timeMatch) {
+          eventDate = timeMatch[1].substring(0, 8);
 
-            const ampm = hours >= 12 ? "PM" : "AM";
-            hours = hours % 12 || 12;
+          const rawTime = timeMatch[1].substring(9, 13);
+          let hours = parseInt(rawTime.substring(0, 2));
+          const minutes = rawTime.substring(2, 4);
 
-            eventTime = `${hours}:${minutes} ${ampm}`;
-          } else if (dateMatch) {
-            eventDate = dateMatch[1];
-          }
+          const ampm = hours >= 12 ? "PM" : "AM";
+          hours = hours % 12 || 12;
 
-          if (eventDate === todayStr) {
-            todaysEvents.push({
-              title: titleMatch[1],
-              time: eventTime
-            });
-          }
+          eventTime = `${hours}:${minutes} ${ampm}`;
+        } else if (dateMatch) {
+          eventDate = dateMatch[1];
+        }
+
+        if (eventDate === todayStr) {
+          todaysEvents.push({
+            title: titleMatch[1],
+            time: eventTime
+          });
         }
       });
 
