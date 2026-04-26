@@ -71,7 +71,7 @@
 
     <div class="middle-row">
       <div class="card">🎂 Next Birthday: Kohen (14 days)</div>
-      <div class="card">✈️ Disney Cruise in 62 days</div>
+      <div class="card" id="countdown">✈️ Loading countdown...</div>
     </div>
 
     <div class="card schedule">
@@ -152,5 +152,32 @@
 
   getWeather();
 </script>
+<script>
+  function updateCountdown() {
+    // 👉 SET YOUR NEXT VACATION DATE HERE
+    const tripName = "Disney Cruise";
+    const tripDate = new Date("2027-07-05T00:00:00");
+
+    const now = new Date();
+    const diff = tripDate - now;
+
+    if (diff <= 0) {
+      document.getElementById("countdown").innerHTML =
+        `✈️ ${tripName} is happening now!`;
+      return;
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((diff / (1000 * 60)) % 60);
+    const seconds = Math.floor((diff / 1000) % 60);
+
+    document.getElementById("countdown").innerHTML =
+      `✈️ ${tripName} in ${days}d ${hours}h ${minutes}m ${seconds}s`;
+  }
+
+  setInterval(updateCountdown, 1000);
+  updateCountdown();
+</script>  
 </body>
 </html>
