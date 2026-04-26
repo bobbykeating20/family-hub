@@ -70,7 +70,7 @@
     </div>
 
     <div class="middle-row">
-      <div class="card">🎂 Next Birthday: Kohen (14 days)</div>
+      <div class="card" id="birthday">🎂 Loading birthday...</div>
       <div class="card" id="countdown">✈️ Loading countdown...</div>
     </div>
 
@@ -178,5 +178,54 @@
   setInterval(updateCountdown, 1000);
   updateCountdown();
 </script>
+<script>
+  const birthdays = [
+    { name: "Kohen", date: "2023-05-10" },
+    { name: "Lauren", date: "1995-08-22" }
+    // 👉 Add more here anytime
+  ];
+
+  function getNextBirthday() {
+    const now = new Date();
+
+    let nextBirthday = null;
+
+    birthdays.forEach(person => {
+      const [year, month, day] = person.date.split("-");
+      let nextDate = new Date(now.getFullYear(), month - 1, day);
+
+      // If already passed this year, move to next year
+      if (nextDate < now) {
+        nextDate.setFullYear(now.getFullYear() + 1);
+      }
+
+      const diff = nextDate - now;
+
+      if (!nextBirthday || diff < nextBirthday.diff) {
+        nextBirthday = {
+          ...person,
+          nextDate,
+          diff
+        };
+      }
+    });
+
+    return nextBirthday;
+  }
+
+  function updateBirthday() {
+    const next = getNextBirthday();
+
+    const days = Math.ceil(next.diff / (1000 * 60 * 60 * 24));
+
+    const birthYear = parseInt(next.date.split("-")[0]);
+    const age = next.nextDate.getFullYear() - birthYear;
+
+    document.getElementById("birthday").innerHTML =
+      `🎂 ${next.name} turns ${age} in ${days} day${days !== 1 ? "s" : ""}`;
+  }
+
+  updateBirthday();
+</script>  
 </body>
 </html>
