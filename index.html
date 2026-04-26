@@ -181,9 +181,8 @@
 <script>
   const birthdays = [
     { name: "Kohen", date: "2023-04-13" },
-    { name: "Lauren", date: "1995-06-09" }
+    { name: "Lauren", date: "1995-06-06" },
     { name: "Bobby", date: "1996-10-04" }
-    // 👉 Add more here anytime
   ];
 
   function getNextBirthday() {
@@ -195,7 +194,7 @@
       const [year, month, day] = person.date.split("-");
       let nextDate = new Date(now.getFullYear(), month - 1, day);
 
-      // If already passed this year, move to next year
+      // If birthday already happened this year → move to next year
       if (nextDate < now) {
         nextDate.setFullYear(now.getFullYear() + 1);
       }
@@ -215,6 +214,9 @@
   }
 
   function updateBirthday() {
+    const el = document.getElementById("birthday");
+    if (!el) return;
+
     const next = getNextBirthday();
 
     const days = Math.ceil(next.diff / (1000 * 60 * 60 * 24));
@@ -222,11 +224,18 @@
     const birthYear = parseInt(next.date.split("-")[0]);
     const age = next.nextDate.getFullYear() - birthYear;
 
-    document.getElementById("birthday").innerHTML =
+    // 🎉 Special case: today is the birthday
+    if (days === 0) {
+      el.innerHTML = `🎉 Today is ${next.name}'s ${age}th birthday!`;
+      return;
+    }
+
+    el.innerHTML =
       `🎂 ${next.name} turns ${age} in ${days} day${days !== 1 ? "s" : ""}`;
   }
 
-  updateBirthday();
-</script>  
+  // Run after page loads
+  window.addEventListener("load", updateBirthday);
+</script>
 </body>
 </html>
