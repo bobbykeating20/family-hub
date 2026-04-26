@@ -215,7 +215,8 @@ async function loadSchedule() {
   try {
     const url = "https://calendar.google.com/calendar/ical/lbkeating20%40gmail.com/public/basic.ics";
 
-    const res = await fetch(url);
+    const proxy = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+const res = await fetch(proxy);
     const text = await res.text();
 
     const events = text.split("BEGIN:VEVENT").slice(1);
