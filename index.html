@@ -214,9 +214,9 @@
 async function loadSchedule() {
   try {
     const url = "https://calendar.google.com/calendar/ical/lbkeating20%40gmail.com/public/basic.ics";
-
     const proxy = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
-const res = await fetch(proxy);
+
+    const res = await fetch(proxy);
     const text = await res.text();
 
     const events = text.split("BEGIN:VEVENT").slice(1);
@@ -227,9 +227,12 @@ const res = await fetch(proxy);
 
     const todaysEvents = [];
 
-    events.forEach(e => {
-      const startMatch = e.match(/DTSTART.*:(\d{8}T?\d*)/);
-      const endMatch = e.match(/DTEND.*:(\d{8}T?\d*)/);
+    events.forEach(raw => {
+      // Handle line wrapping (important for Google ICS)
+      const e = raw.replace(/\r?\n\s/g, "");
+
+      const startMatch = e.match(/DTSTART.*:(\d{8}T?\d{6})/);
+      const endMatch = e.match(/DTEND.*:(\d{8}T?\d{6})/);
       const titleMatch = e.match(/SUMMARY:(.*)/);
 
       if (!startMatch || !titleMatch) return;
@@ -238,32 +241,24 @@ const res = await fetch(proxy);
         const year = raw.substring(0,4);
         const month = raw.substring(4,6) - 1;
         const day = raw.substring(6,8);
+        const hour = raw.substring(9,11);
+        const min = raw.substring(11,13);
 
-        if (raw.includes("T")) {
-          const hour = raw.substring(9,11);
-          const min = raw.substring(11,13);
-          return new Date(year, month, day, hour, min);
-        }
-        return new Date(year, month, day);
+        return new Date(year, month, day, hour, min);
       }
 
       const start = parseDate(startMatch[1]);
       const end = endMatch ? parseDate(endMatch[1]) : start;
 
       if (start < endOfDay && end >= startOfDay) {
-        let time = "";
-
-        if (startMatch[1].includes("T")) {
-          let h = start.getHours();
-          const m = String(start.getMinutes()).padStart(2, "0");
-          const ampm = h >= 12 ? "PM" : "AM";
-          h = h % 12 || 12;
-          time = `${h}:${m} ${ampm}`;
-        }
+        let h = start.getHours();
+        const m = String(start.getMinutes()).padStart(2, "0");
+        const ampm = h >= 12 ? "PM" : "AM";
+        h = h % 12 || 12;
 
         todaysEvents.push({
           title: titleMatch[1],
-          time,
+          time: `${h}:${m} ${ampm}`,
           sort: start
         });
       }
@@ -280,10 +275,11 @@ const res = await fetch(proxy);
 
     container.innerHTML = todaysEvents.map(e => `
       <div style="
-        padding:10px 0;
+        padding:12px 0;
         border-bottom:1px solid rgba(255,255,255,0.1);
         display:flex;
         justify-content:space-between;
+        font-size:24px;
       ">
         <span>${e.title}</span>
         <span style="opacity:0.7">${e.time}</span>
