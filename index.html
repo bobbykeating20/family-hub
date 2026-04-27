@@ -8,7 +8,7 @@
 <style>
 body {
   margin:0;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:-apple-system, BlinkMacSystemFont, sans-serif;
   color:white;
   background: radial-gradient(circle at 20% 20%, #1a2a6c, #000);
 }
@@ -33,7 +33,7 @@ body {
   backdrop-filter: blur(20px);
   padding:20px 25px;
   border-radius:20px;
-  box-shadow: 0 0 40px rgba(0,0,0,0.4);
+  box-shadow:0 0 40px rgba(0,0,0,0.4);
 }
 
 .big { font-size:32px; }
@@ -44,10 +44,11 @@ body {
   flex:1;
   overflow:auto;
 }
+
 .highlight {
-  font-size:20px;
-  margin-bottom:10px;
   color:#ffd166;
+  margin-bottom:10px;
+  font-size:20px;
 }
 </style>
 </head>
@@ -82,24 +83,25 @@ body {
 
 <script>
 
-// CLOCK
+// CLOCK (WITH SECONDS)
 function updateClock() {
   const now = new Date();
+
   let h = now.getHours();
   const m = String(now.getMinutes()).padStart(2,'0');
   const s = String(now.getSeconds()).padStart(2,'0');
+
   const ampm = h >= 12 ? "PM" : "AM";
   h = h % 12 || 12;
 
   document.getElementById("clock").innerHTML =
-    `🕒 ${h}:${m}:${s} ${ampm}<br><span class="small">${
-      now.toLocaleDateString(undefined,{
-        weekday:'long',
-        year:'numeric',
-        month:'long',
-        day:'numeric'
-      })
-    }</span>`;
+    `🕒 ${h}:${m}:${s} ${ampm}<br>
+     <span class="small">${now.toLocaleDateString(undefined,{
+       weekday:'long',
+       year:'numeric',
+       month:'long',
+       day:'numeric'
+     })}</span>`;
 }
 setInterval(updateClock,1000);
 updateClock();
@@ -108,6 +110,7 @@ updateClock();
 // WEATHER
 async function loadWeather() {
   const url = "https://api.open-meteo.com/v1/forecast?latitude=37.4138&longitude=-79.1422&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=America/New_York";
+
   const res = await fetch(url);
   const data = await res.json();
 
@@ -133,7 +136,7 @@ function loadBirthday() {
     if(d < today) d.setFullYear(today.getFullYear()+1);
 
     const diff = (d - today)/(1000*60*60*24);
-    if(diff < min){ min=diff; next=b; }
+    if(diff < min){ min = diff; next = b; }
   });
 
   document.getElementById("birthday").innerHTML =
@@ -160,7 +163,7 @@ setInterval(updateCountdown,60000);
 updateCountdown();
 
 
-// 🔥 SMART SCHEDULE
+// 🔥 SCHEDULE (FINAL CORRECT VERSION)
 const schedule = [
   { date:"2026-04-26", time:"09:00", title:"Church" },
   { date:"2026-04-26", time:"19:50", title:"Flight to Atlanta ✈️" },
@@ -170,47 +173,54 @@ const schedule = [
 
 function loadSchedule() {
   const now = new Date();
-  const today = now.toISOString().slice(0,10);
+  const todayStr = now.toISOString().slice(0,10);
 
   const tomorrow = new Date(now);
   tomorrow.setDate(now.getDate()+1);
   const tomorrowStr = tomorrow.toISOString().slice(0,10);
 
-  const upcoming = schedule
-    .map(e => {
-      const dt = new Date(`${e.date}T${e.time}`);
-      return {...e, dt};
-    })
-    .filter(e =>
-      (e.date === today || e.date === tomorrowStr) &&
-      e.dt > now
-    )
+  const parsed = schedule.map(e => ({
+    ...e,
+    dt: new Date(`${e.date}T${e.time}`)
+  }));
+
+  const visible = parsed
+    .filter(e => e.date === todayStr || e.date === tomorrowStr)
     .sort((a,b)=>a.dt - b.dt);
 
   const container = document.getElementById("events");
   const nextBox = document.getElementById("nextEvent");
 
-  if(upcoming.length === 0){
-    container.innerHTML = "No upcoming events";
+  if (visible.length === 0) {
+    container.innerHTML = "No events";
     nextBox.innerHTML = "";
     return;
   }
 
-  // NEXT EVENT TIMER
-  const next = upcoming[0];
-  const diff = next.dt - now;
+  const upcoming = parsed
+    .filter(e => e.dt > now)
+    .sort((a,b)=>a.dt - b.dt);
 
-  const hours = Math.floor(diff/(1000*60*60));
-  const minutes = Math.floor((diff/(1000*60))%60);
+  if (upcoming.length > 0) {
+    const next = upcoming[0];
+    const diff = next.dt - now;
 
-  nextBox.innerHTML =
-    `⏳ Next: ${next.title} in ${hours}h ${minutes}m`;
+    const h = Math.floor(diff/(1000*60*60));
+    const m = Math.floor((diff/(1000*60))%60);
 
-  container.innerHTML = upcoming.map(e => {
-    let h = new Date(`${e.date}T${e.time}`).getHours();
-    const m = e.time.split(":")[1];
+    nextBox.innerHTML =
+      `⏳ Next: ${next.title} in ${h}h ${m}m`;
+  } else {
+    nextBox.innerHTML = "✅ No more events today";
+  }
+
+  container.innerHTML = visible.map(e => {
+    let h = e.dt.getHours();
+    const m = String(e.dt.getMinutes()).padStart(2,'0');
     const ampm = h>=12?"PM":"AM";
     h = h%12 || 12;
+
+    const isPast = e.dt < now;
 
     return `
       <div style="
@@ -218,6 +228,7 @@ function loadSchedule() {
         border-bottom:1px solid rgba(255,255,255,0.1);
         display:flex;
         justify-content:space-between;
+        opacity:${isPast ? 0.5 : 1};
       ">
         <span>${e.title}</span>
         <span>${h}:${m} ${ampm}</span>
