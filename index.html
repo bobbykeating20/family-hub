@@ -76,11 +76,22 @@ body {
 </div>
 
 <script>
-// CLOCK
+// CLOCK (WITH SECONDS)
 function updateClock() {
   const now = new Date();
-  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const date = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  const time = now.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+
+  const date = now.toLocaleDateString(undefined, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 
   document.getElementById("clock").innerHTML =
     `🕒 ${time}<br><span style="font-size:20px;">${date}</span>`;
@@ -156,15 +167,14 @@ function updateCountdown() {
 setInterval(updateCountdown, 60000);
 updateCountdown();
 
-// ✅ FINAL SCHEDULE (WORKING)
+// ✅ FINAL SCHEDULE (STABLE VERSION)
 async function loadSchedule() {
   try {
-    const res = await fetch("https://api.allorigins.win/get?url=" + encodeURIComponent(
-      "https://calendar.google.com/calendar/ical/lbkeating20%40gmail.com/public/basic.ics"
-    ));
+    const url = "https://calendar.google.com/calendar/ical/lbkeating20%40gmail.com/public/basic.ics";
+    const proxy = "https://corsproxy.io/?" + encodeURIComponent(url);
 
-    const data = await res.json();
-    const text = data.contents;
+    const res = await fetch(proxy);
+    const text = await res.text();
 
     const events = text.split("BEGIN:VEVENT").slice(1);
 
@@ -176,39 +186,26 @@ async function loadSchedule() {
     events.forEach(e => {
       const clean = e.replace(/\r?\n\s/g, "");
 
-      const dateMatch = clean.match(/DTSTART.*:(\d{8})/);
-      const timeMatch = clean.match(/DTSTART.*:(\d{8}T\d{6})/);
       const titleMatch = clean.match(/SUMMARY:(.*)/);
+      const timeMatch = clean.match(/DTSTART.*:(\d{8}T\d{6})/);
 
-      if (!titleMatch) return;
+      if (!titleMatch || !timeMatch) return;
 
-      // All-day
-      if (dateMatch && !timeMatch) {
-        const d = dateMatch[1];
-        const formatted = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
-        if (formatted === todayStr) {
-          todaysEvents.push({ title: titleMatch[1], time: "All Day", sort: 0 });
-        }
-      }
+      const raw = timeMatch[1];
+      const dateStr = `${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}`;
 
-      // Timed
-      if (timeMatch) {
-        const raw = timeMatch[1];
-        const dateStr = `${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}`;
+      if (dateStr === todayStr) {
+        const hour = parseInt(raw.slice(9,11));
+        const min = raw.slice(11,13);
 
-        if (dateStr === todayStr) {
-          const hour = parseInt(raw.slice(9,11));
-          const min = raw.slice(11,13);
+        let h = hour % 12 || 12;
+        const ampm = hour >= 12 ? "PM" : "AM";
 
-          let h = hour % 12 || 12;
-          const ampm = hour >= 12 ? "PM" : "AM";
-
-          todaysEvents.push({
-            title: titleMatch[1],
-            time: `${h}:${min} ${ampm}`,
-            sort: hour * 60 + parseInt(min)
-          });
-        }
+        todaysEvents.push({
+          title: titleMatch[1],
+          time: `${h}:${min} ${ampm}`,
+          sort: hour * 60 + parseInt(min)
+        });
       }
     });
 
