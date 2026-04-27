@@ -50,6 +50,14 @@ body {
   margin-bottom:10px;
   font-size:20px;
 }
+
+.day-header {
+  margin-top:15px;
+  margin-bottom:5px;
+  font-size:20px;
+  font-weight:600;
+  opacity:0.9;
+}
 </style>
 </head>
 
@@ -57,33 +65,29 @@ body {
 
 <div class="container">
 
-  <!-- TOP -->
   <div class="row">
     <div class="card" id="clock"></div>
     <div class="card big" id="weather"></div>
   </div>
 
-  <!-- MIDDLE -->
   <div class="row">
     <div class="card medium" id="birthday"></div>
     <div class="card medium" id="countdown"></div>
   </div>
 
-  <!-- SCHEDULE -->
   <div class="card schedule">
     <div class="medium">📅 Schedule</div>
     <div id="nextEvent" class="highlight"></div>
     <div id="events" class="small"></div>
   </div>
 
-  <!-- TRIVIA -->
   <div class="card small" id="trivia"></div>
 
 </div>
 
 <script>
 
-// CLOCK (WITH SECONDS)
+// CLOCK
 function updateClock() {
   const now = new Date();
 
@@ -163,13 +167,23 @@ setInterval(updateCountdown,60000);
 updateCountdown();
 
 
-// 🔥 SCHEDULE (FINAL CORRECT VERSION)
+// SCHEDULE
 const schedule = [
   { date:"2026-04-26", time:"09:00", title:"Church" },
   { date:"2026-04-26", time:"19:50", title:"Flight to Atlanta ✈️" },
   { date:"2026-04-27", time:"17:30", title:"Kohen Music 🎵" },
   { date:"2026-04-28", time:"09:00", title:"Kohen School 🏫" }
 ];
+
+function formatDateHeader(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString(undefined,{
+    weekday:'long',
+    year:'numeric',
+    month:'long',
+    day:'numeric'
+  });
+}
 
 function loadSchedule() {
   const now = new Date();
@@ -197,9 +211,8 @@ function loadSchedule() {
     return;
   }
 
-  const upcoming = parsed
-    .filter(e => e.dt > now)
-    .sort((a,b)=>a.dt - b.dt);
+  // NEXT EVENT
+  const upcoming = parsed.filter(e => e.dt > now).sort((a,b)=>a.dt - b.dt);
 
   if (upcoming.length > 0) {
     const next = upcoming[0];
@@ -208,33 +221,47 @@ function loadSchedule() {
     const h = Math.floor(diff/(1000*60*60));
     const m = Math.floor((diff/(1000*60))%60);
 
-    nextBox.innerHTML =
-      `⏳ Next: ${next.title} in ${h}h ${m}m`;
+    nextBox.innerHTML = `⏳ Next: ${next.title} in ${h}h ${m}m`;
   } else {
     nextBox.innerHTML = "✅ No more events today";
   }
 
-  container.innerHTML = visible.map(e => {
-    let h = e.dt.getHours();
-    const m = String(e.dt.getMinutes()).padStart(2,'0');
-    const ampm = h>=12?"PM":"AM";
-    h = h%12 || 12;
+  // GROUP BY DAY
+  const grouped = {};
+  visible.forEach(e => {
+    if (!grouped[e.date]) grouped[e.date] = [];
+    grouped[e.date].push(e);
+  });
 
-    const isPast = e.dt < now;
+  let html = "";
 
-    return `
-      <div style="
-        padding:12px 0;
-        border-bottom:1px solid rgba(255,255,255,0.1);
-        display:flex;
-        justify-content:space-between;
-        opacity:${isPast ? 0.5 : 1};
-      ">
-        <span>${e.title}</span>
-        <span>${h}:${m} ${ampm}</span>
-      </div>
-    `;
-  }).join("");
+  Object.keys(grouped).forEach(date => {
+    html += `<div class="day-header">${formatDateHeader(date)}</div>`;
+
+    grouped[date].forEach(e => {
+      let h = e.dt.getHours();
+      const m = String(e.dt.getMinutes()).padStart(2,'0');
+      const ampm = h>=12?"PM":"AM";
+      h = h%12 || 12;
+
+      const isPast = e.dt < now;
+
+      html += `
+        <div style="
+          padding:10px 0;
+          border-bottom:1px solid rgba(255,255,255,0.1);
+          display:flex;
+          justify-content:space-between;
+          opacity:${isPast ? 0.5 : 1};
+        ">
+          <span>${e.title}</span>
+          <span>${h}:${m} ${ampm}</span>
+        </div>
+      `;
+    });
+  });
+
+  container.innerHTML = html;
 }
 
 loadSchedule();
