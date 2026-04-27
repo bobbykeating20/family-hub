@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Family Hub</title>
+<title>Keating Family Hub</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -10,9 +10,32 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   color: white;
-  background: radial-gradient(circle at top left, #1a2a6c, #0b0f2a 70%);
+  background: radial-gradient(circle at 20% 20%, #243b55, #0b0f2a 70%);
 }
 
+/* HEADER */
+.header {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.title {
+  font-size: 22px;
+  letter-spacing: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #ffffff, #aabfff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  font-size: 14px;
+  opacity: 0.6;
+  margin-top: 5px;
+}
+
+/* LAYOUT */
 .container {
   padding: 40px;
   display: flex;
@@ -72,6 +95,12 @@ body {
 
 <div class="container">
 
+  <!-- HEADER -->
+  <div class="header">
+    <div class="title">Keating Family Hub</div>
+    <div class="subtitle">Welcome back</div>
+  </div>
+
   <!-- TOP ROW -->
   <div class="row">
     <div class="card">
@@ -123,7 +152,7 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// WEATHER (simple + stable)
+// WEATHER
 async function loadWeather() {
   try {
     const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=37.41&longitude=-79.14&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=America/New_York");
@@ -141,7 +170,7 @@ async function loadWeather() {
 }
 loadWeather();
 
-// BIRTHDAYS (with age)
+// BIRTHDAYS
 const birthdays = [
   { name: "Kohen", date: "2023-04-13" },
   { name: "Lauren", date: "1995-06-06" },
@@ -174,7 +203,7 @@ function getNextBirthday() {
 }
 getNextBirthday();
 
-// VACATION COUNTDOWN
+// VACATION
 const vacationDate = new Date("2026-06-05T00:00:00");
 
 function updateVacation() {
@@ -204,7 +233,6 @@ const schedule = [
 function loadSchedule() {
   const now = new Date();
 
-  // next 5 days
   const days = [];
   for (let i=0;i<5;i++){
     const d = new Date();
@@ -228,7 +256,6 @@ function loadSchedule() {
     return;
   }
 
-  // NEXT EVENT
   const next = events.find(e => e.dt > now);
   if (next) {
     const diff = Math.round((next.dt - now)/(1000*60*60));
