@@ -15,74 +15,99 @@ body {
 
 /* HEADER */
 .header {
-  text-align: center;
-  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px 40px 10px;
 }
 
 .title {
-  font-size: 22px;
+  font-size: 18px;
   letter-spacing: 4px;
   font-weight: 600;
-  text-transform: uppercase;
-  background: linear-gradient(90deg, #ffffff, #aabfff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  opacity: 0.85;
 }
 
 .subtitle {
   font-size: 14px;
   opacity: 0.6;
-  margin-top: 5px;
 }
 
-/* LAYOUT */
+/* GRID LAYOUT */
 .container {
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-}
-
-.row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto 1fr;
   gap: 20px;
+  padding: 20px 40px 40px;
 }
 
+/* CARDS */
 .card {
-  background: rgba(255,255,255,0.06);
-  backdrop-filter: blur(12px);
-  border-radius: 20px;
-  padding: 20px 25px;
-  flex: 1;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px);
+  border-radius: 22px;
+  padding: 22px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.4),
+    inset 0 0 20px rgba(255,255,255,0.03);
 }
 
+/* TYPOGRAPHY */
 .big {
-  font-size: 28px;
+  font-size: 34px;
+  font-weight: 700;
+}
+
+.section-title {
+  font-size: 20px;
   font-weight: 600;
+  margin-bottom: 8px;
 }
 
 .sub {
+  font-size: 13px;
   opacity: 0.7;
-  margin-top: 5px;
 }
 
-.schedule {
-  min-height: 250px;
+/* GRID SPANS */
+.full {
+  grid-column: span 2;
 }
 
+/* SCHEDULE */
 .event {
-  margin: 6px 0;
+  margin: 8px 0;
+  display: flex;
+  justify-content: flex-start;
+  gap: 15px;
+}
+
+.event-time {
+  width: 80px;
+  opacity: 0.7;
+}
+
+.event-title {
+  font-weight: 500;
 }
 
 .past {
-  opacity: 0.4;
+  opacity: 0.35;
+}
+
+.next-event {
+  color: #7dd3fc;
+  font-weight: 600;
 }
 
 .day-header {
   margin-top: 15px;
-  font-weight: 600;
-  opacity: 0.8;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 14px;
+  opacity: 0.75;
 }
 
 .trivia {
@@ -93,68 +118,76 @@ body {
 
 <body>
 
+<!-- HEADER -->
+<div class="header">
+  <div class="title">KEATING FAMILY HUB</div>
+  <div class="subtitle" id="greeting"></div>
+</div>
+
 <div class="container">
 
-  <!-- HEADER -->
-  <div class="header">
-    <div class="title">Keating Family Hub</div>
-    <div class="subtitle">Welcome back</div>
+  <!-- CLOCK -->
+  <div class="card">
+    <div class="big" id="clock"></div>
+    <div class="sub" id="date"></div>
   </div>
 
-  <!-- TOP ROW -->
-  <div class="row">
-    <div class="card">
-      <div class="big" id="clock"></div>
-      <div class="sub" id="date"></div>
-    </div>
-
-    <div class="card">
-      <div class="big" id="weather">Loading weather...</div>
-    </div>
+  <!-- WEATHER -->
+  <div class="card">
+    <div class="big" id="weather">Loading...</div>
   </div>
 
-  <!-- SECOND ROW -->
-  <div class="row">
-    <div class="card" id="birthday"></div>
-    <div class="card" id="vacation"></div>
-  </div>
+  <!-- BIRTHDAY -->
+  <div class="card" id="birthday"></div>
+
+  <!-- VACATION -->
+  <div class="card" id="vacation"></div>
 
   <!-- SCHEDULE -->
-  <div class="card schedule">
-    <div class="big">📅 Schedule</div>
+  <div class="card full">
+    <div class="section-title">📅 Schedule</div>
     <div id="nextEvent" class="sub"></div>
     <div id="events"></div>
   </div>
 
   <!-- TRIVIA -->
-  <div class="card trivia">
+  <div class="card full trivia">
     🎬 Disney Trivia: Genie was inspired by Robin Williams' improv.
   </div>
 
 </div>
 
 <script>
-// CLOCK (with seconds)
+// GREETING
+function setGreeting() {
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good Morning" :
+    hour < 18 ? "Good Afternoon" :
+    "Good Evening";
+
+  document.getElementById("greeting").textContent = greeting;
+}
+setGreeting();
+
+// CLOCK
 function updateClock() {
   const now = new Date();
 
   document.getElementById("clock").textContent =
-    now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
 
   document.getElementById("date").textContent =
-    now.toLocaleDateString(undefined, {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    now.toLocaleDateString(undefined,{
+      weekday:'long',year:'numeric',month:'long',day:'numeric'
     });
 }
-setInterval(updateClock, 1000);
+setInterval(updateClock,1000);
 updateClock();
 
 // WEATHER
-async function loadWeather() {
-  try {
+async function loadWeather(){
+  try{
     const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=37.41&longitude=-79.14&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=America/New_York");
     const data = await res.json();
 
@@ -164,127 +197,118 @@ async function loadWeather() {
 
     document.getElementById("weather").textContent =
       `☀️ ${current}° (H:${high}° L:${low}°) • Lynchburg`;
-  } catch {
-    document.getElementById("weather").textContent = "Weather unavailable";
+  }catch{
+    document.getElementById("weather").textContent="Weather unavailable";
   }
 }
 loadWeather();
 
 // BIRTHDAYS
-const birthdays = [
-  { name: "Kohen", date: "2023-04-13" },
-  { name: "Lauren", date: "1995-06-06" },
-  { name: "Bobby", date: "1996-10-04" }
+const birthdays=[
+  {name:"Kohen",date:"2023-04-13"},
+  {name:"Lauren",date:"1995-06-06"},
+  {name:"Bobby",date:"1996-10-04"}
 ];
 
-function getNextBirthday() {
-  const now = new Date();
+function getBirthday(){
+  const now=new Date();
+  let soonest=null;
 
-  let soonest = null;
+  birthdays.forEach(p=>{
+    const b=new Date(p.date);
+    const next=new Date(now.getFullYear(),b.getMonth(),b.getDate());
+    if(next<now) next.setFullYear(now.getFullYear()+1);
 
-  birthdays.forEach(person => {
-    const bday = new Date(person.date);
-    const next = new Date(now.getFullYear(), bday.getMonth(), bday.getDate());
+    const diff=Math.ceil((next-now)/(1000*60*60*24));
+    const age=next.getFullYear()-b.getFullYear();
 
-    if (next < now) next.setFullYear(now.getFullYear() + 1);
-
-    const diffDays = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
-    const age = next.getFullYear() - bday.getFullYear();
-
-    if (!soonest || diffDays < soonest.days) {
-      soonest = {
-        text: `🎂 ${person.name} turns ${age} in ${diffDays} days`,
-        days: diffDays
-      };
+    if(!soonest||diff<soonest.days){
+      soonest={text:`🎂 ${p.name} turns ${age} in ${diff} days`,days:diff};
     }
   });
 
-  document.getElementById("birthday").textContent = soonest.text;
+  document.getElementById("birthday").textContent=soonest.text;
 }
-getNextBirthday();
+getBirthday();
 
 // VACATION
-const vacationDate = new Date("2026-06-05T00:00:00");
+const vacationDate=new Date("2026-06-05");
 
-function updateVacation() {
-  const now = new Date();
-  const diff = vacationDate - now;
+function updateVacation(){
+  const now=new Date();
+  const diff=vacationDate-now;
 
-  const days = Math.floor(diff / (1000*60*60*24));
-  const hours = Math.floor((diff / (1000*60*60)) % 24);
-  const mins = Math.floor((diff / (1000*60)) % 60);
+  const d=Math.floor(diff/(1000*60*60*24));
+  const h=Math.floor((diff/(1000*60*60))%24);
+  const m=Math.floor((diff/(1000*60))%60);
 
-  document.getElementById("vacation").textContent =
-    `✈️ Walt Disney World in ${days}d ${hours}h ${mins}m`;
+  document.getElementById("vacation").textContent=
+    `✈️ Walt Disney World in ${d}d ${h}h ${m}m`;
 }
-setInterval(updateVacation, 60000);
+setInterval(updateVacation,60000);
 updateVacation();
 
-// SCHEDULE (NEXT 5 DAYS)
-const schedule = [
-  { title: "Church", date: "2026-04-26", time: "09:00" },
-  { title: "Flight to Atlanta", date: "2026-04-26", time: "19:50" },
-  { title: "Kohen Music", date: "2026-04-27", time: "17:30" },
-  { title: "Kohen School", date: "2026-04-28", time: "09:00" },
-  { title: "Kohen School", date: "2026-04-29", time: "09:00" },
-  { title: "Kohen Soccer", date: "2026-05-02", time: "10:00" }
+// SCHEDULE
+const schedule=[
+  {title:"Church",date:"2026-04-26",time:"09:00"},
+  {title:"Flight to Atlanta",date:"2026-04-26",time:"19:50"},
+  {title:"Kohen Music",date:"2026-04-27",time:"17:30"},
+  {title:"Kohen School",date:"2026-04-28",time:"09:00"},
+  {title:"Kohen School",date:"2026-04-29",time:"09:00"}
 ];
 
-function loadSchedule() {
-  const now = new Date();
+function loadSchedule(){
+  const now=new Date();
 
-  const days = [];
-  for (let i=0;i<5;i++){
-    const d = new Date();
+  const days=[];
+  for(let i=0;i<5;i++){
+    const d=new Date();
     d.setDate(now.getDate()+i);
     days.push(d.toISOString().slice(0,10));
   }
 
-  const events = schedule
-    .map(e => ({
-      ...e,
-      dt: new Date(e.date + "T" + e.time)
-    }))
-    .filter(e => days.includes(e.date))
-    .sort((a,b)=>a.dt - b.dt);
+  const events=schedule.map(e=>({...e,dt:new Date(e.date+"T"+e.time)}))
+    .filter(e=>days.includes(e.date))
+    .sort((a,b)=>a.dt-b.dt);
 
-  const container = document.getElementById("events");
-  container.innerHTML = "";
+  const container=document.getElementById("events");
+  container.innerHTML="";
 
-  if (!events.length) {
-    container.innerHTML = "<div>No events</div>";
+  if(!events.length){
+    container.innerHTML="<div>No events</div>";
     return;
   }
 
-  const next = events.find(e => e.dt > now);
-  if (next) {
-    const diff = Math.round((next.dt - now)/(1000*60*60));
-    document.getElementById("nextEvent").textContent =
-      `Next event in ${diff} hours`;
+  const next=events.find(e=>e.dt>now);
+  if(next){
+    const diff=Math.round((next.dt-now)/(1000*60*60));
+    document.getElementById("nextEvent").textContent=`Next event in ${diff} hours`;
   }
 
-  let currentDay = "";
+  let currentDay="";
 
-  events.forEach(e => {
-    if (e.date !== currentDay) {
-      currentDay = e.date;
+  events.forEach(e=>{
+    if(e.date!==currentDay){
+      currentDay=e.date;
 
-      const d = new Date(e.date);
-      const header = document.createElement("div");
-      header.className = "day-header";
-      header.textContent = d.toLocaleDateString(undefined,{
+      const header=document.createElement("div");
+      header.className="day-header";
+      header.textContent=new Date(e.date).toLocaleDateString(undefined,{
         weekday:'long',month:'long',day:'numeric',year:'numeric'
       });
       container.appendChild(header);
     }
 
-    const div = document.createElement("div");
-    div.className = "event";
+    const div=document.createElement("div");
+    div.className="event";
 
-    if (e.dt < now) div.classList.add("past");
+    if(e.dt<now) div.classList.add("past");
+    if(next && e.dt.getTime()===next.dt.getTime()) div.classList.add("next-event");
 
-    div.textContent =
-      `${new Date("1970-01-01T"+e.time).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})} - ${e.title}`;
+    div.innerHTML=`
+      <div class="event-time">${new Date("1970-01-01T"+e.time).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</div>
+      <div class="event-title">${e.title}</div>
+    `;
 
     container.appendChild(div);
   });
