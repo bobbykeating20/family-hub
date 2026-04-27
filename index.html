@@ -6,51 +6,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+
 /* ===================== */
-/* 🌊 DISNEY CRUISE BACKGROUND */
+/* 🌌 PREMIUM BACKGROUND */
 /* ===================== */
 
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   color: white;
-  overflow-x: hidden;
 
   background:
-    radial-gradient(circle at 20% 30%, rgba(0,180,200,0.15), transparent 40%),
-    radial-gradient(circle at 80% 20%, rgba(255,200,120,0.12), transparent 45%),
-    radial-gradient(circle at 50% 100%, rgba(0,120,255,0.15), transparent 60%),
-    linear-gradient(180deg, #06142e 0%, #0b1f4d 40%, #081733 100%);
+    radial-gradient(circle at 15% 20%, rgba(0,200,255,0.18), transparent 40%),
+    radial-gradient(circle at 85% 10%, rgba(255,200,120,0.12), transparent 40%),
+    radial-gradient(circle at 50% 100%, rgba(0,80,180,0.25), transparent 60%),
+    linear-gradient(180deg, #020617 0%, #071a3a 40%, #020617 100%);
 }
 
-/* Ocean glow animation */
+/* Glow layer */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle, rgba(0,255,255,0.06), transparent 60%);
-  animation: oceanGlow 14s ease-in-out infinite;
+  background: radial-gradient(circle, rgba(0,255,255,0.05), transparent 60%);
+  animation: glow 12s ease-in-out infinite;
   pointer-events: none;
 }
 
-@keyframes oceanGlow {
-  0%,100% { transform: scale(1); opacity: 0.4; }
-  50% { transform: scale(1.2); opacity: 0.7; }
-}
-
-/* Shimmer layer */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.04), transparent);
-  animation: shimmer 8s infinite;
-  pointer-events: none;
-}
-
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+@keyframes glow {
+  0%,100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
 }
 
 /* ===================== */
@@ -59,20 +44,19 @@ body::after {
 
 .header {
   text-align: center;
-  margin-top: 30px;
-  margin-bottom: 10px;
+  margin: 40px 0 20px;
 }
 
 .header h1 {
-  letter-spacing: 4px;
-  font-weight: 600;
-  font-size: 28px;
+  font-size: 30px;
+  letter-spacing: 6px;
   margin: 0;
+  font-weight: 700;
 }
 
 .header p {
-  margin: 5px 0 0;
-  opacity: 0.7;
+  opacity: 0.6;
+  margin-top: 6px;
 }
 
 /* ===================== */
@@ -80,91 +64,85 @@ body::after {
 /* ===================== */
 
 .container {
+  padding: 30px 80px;
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  padding: 30px 60px;
+  gap: 30px;
 }
 
-/* Grid rows */
 .row {
   display: flex;
-  gap: 20px;
+  gap: 25px;
 }
 
 /* ===================== */
-/* ✨ CARDS */
+/* 💎 CARDS */
 /* ===================== */
 
 .card {
   flex: 1;
-  padding: 25px;
-  border-radius: 22px;
+  padding: 28px;
+  border-radius: 26px;
 
   background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(25px);
 
-  border: 1px solid rgba(255,215,160,0.15);
+  border: 1px solid rgba(255,255,255,0.12);
 
   box-shadow:
-    0 10px 30px rgba(0,0,0,0.4),
-    inset 0 0 40px rgba(255,255,255,0.03);
+    0 20px 60px rgba(0,0,0,0.6),
+    inset 0 0 40px rgba(255,255,255,0.05);
 
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  position: relative;
 }
 
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 20px 50px rgba(0,0,0,0.5),
-    inset 0 0 60px rgba(255,255,255,0.05);
-}
-
-/* Floating animation */
-.card {
-  animation: floatCard 8s ease-in-out infinite;
-}
-
-@keyframes floatCard {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+/* subtle edge glow */
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 26px;
+  border: 1px solid rgba(0,255,255,0.08);
+  pointer-events: none;
 }
 
 /* ===================== */
-/* TEXT STYLES */
+/* TEXT */
 /* ===================== */
 
 .time {
-  font-size: 44px;
-  font-weight: 600;
+  font-size: 56px;
+  font-weight: 700;
 }
 
 .date {
   opacity: 0.7;
-  margin-top: 5px;
+  margin-top: 6px;
+  font-size: 16px;
 }
 
 .section-title {
-  font-size: 22px;
+  font-size: 24px;
+  font-weight: 600;
   margin-bottom: 10px;
 }
 
 .event {
   margin: 6px 0;
-  opacity: 0.9;
+  font-size: 16px;
 }
 
 .subtle {
   opacity: 0.6;
-  font-size: 14px;
+  margin-bottom: 10px;
 }
 
 /* ===================== */
-/* SCHEDULE SCROLL */
+/* SCHEDULE */
 /* ===================== */
 
 .schedule {
-  max-height: 300px;
+  max-height: 320px;
   overflow-y: auto;
 }
 
@@ -175,6 +153,7 @@ body::after {
   background: rgba(255,255,255,0.2);
   border-radius: 10px;
 }
+
 </style>
 </head>
 
@@ -187,19 +166,17 @@ body::after {
 
 <div class="container">
 
-  <!-- ROW 1 -->
+  <!-- TOP -->
   <div class="row">
     <div class="card">
       <div class="time" id="time"></div>
       <div class="date" id="date"></div>
     </div>
 
-    <div class="card" id="weather">
-      Loading weather...
-    </div>
+    <div class="card" id="weather"></div>
   </div>
 
-  <!-- ROW 2 -->
+  <!-- SECOND -->
   <div class="row">
     <div class="card" id="birthday"></div>
     <div class="card" id="vacation"></div>
@@ -220,28 +197,23 @@ body::after {
 </div>
 
 <script>
-/* ===================== */
-/* CLOCK */
-/* ===================== */
 
+/* CLOCK */
 function updateClock() {
   const now = new Date();
 
   document.getElementById("time").textContent =
-    now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
 
   document.getElementById("date").textContent =
     now.toLocaleDateString(undefined, {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      weekday:'long', year:'numeric', month:'long', day:'numeric'
     });
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-/* ===================== */
 /* WEATHER */
-/* ===================== */
-
 fetch("https://api.open-meteo.com/v1/forecast?latitude=37.41&longitude=-79.14&current_weather=true&temperature_unit=fahrenheit")
 .then(r => r.json())
 .then(data => {
@@ -249,121 +221,107 @@ fetch("https://api.open-meteo.com/v1/forecast?latitude=37.41&longitude=-79.14&cu
     `☀️ ${Math.round(data.current_weather.temperature)}° • Lynchburg`;
 });
 
-/* ===================== */
 /* BIRTHDAYS */
-/* ===================== */
-
 const birthdays = [
   { name: "Kohen", date: "2023-04-13" },
   { name: "Lauren", date: "1995-06-06" },
   { name: "Bobby", date: "1996-10-04" }
 ];
 
-function getNextBirthday() {
+function updateBirthday() {
   const now = new Date();
-  let soonest = null;
+  let closest;
 
   birthdays.forEach(p => {
-    const bday = new Date(p.date);
-    const next = new Date(now.getFullYear(), bday.getMonth(), bday.getDate());
+    let b = new Date(p.date);
+    let next = new Date(now.getFullYear(), b.getMonth(), b.getDate());
+    if (next < now) next.setFullYear(now.getFullYear()+1);
 
-    if (next < now) next.setFullYear(now.getFullYear() + 1);
+    let diff = Math.ceil((next - now)/(1000*60*60*24));
+    let age = next.getFullYear() - b.getFullYear();
 
-    const diff = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
-    const age = next.getFullYear() - bday.getFullYear();
-
-    if (!soonest || diff < soonest.diff) {
-      soonest = { ...p, diff, age };
+    if (!closest || diff < closest.diff) {
+      closest = { ...p, diff, age };
     }
   });
 
-  return soonest;
-}
-
-function updateBirthday() {
-  const b = getNextBirthday();
   document.getElementById("birthday").textContent =
-    `🎂 ${b.name} turns ${b.age} in ${b.diff} days`;
+    `🎂 ${closest.name} turns ${closest.age} in ${closest.diff} days`;
 }
 updateBirthday();
 
-/* ===================== */
 /* VACATION */
-/* ===================== */
+const trip = new Date("2026-06-05");
 
-const tripDate = new Date("2026-06-05");
-
-function updateVacation() {
+function updateTrip() {
   const now = new Date();
-  const diff = tripDate - now;
+  const diff = trip - now;
 
-  const days = Math.floor(diff / (1000*60*60*24));
-  const hours = Math.floor((diff / (1000*60*60)) % 24);
-  const minutes = Math.floor((diff / (1000*60)) % 60);
+  const d = Math.floor(diff/(1000*60*60*24));
+  const h = Math.floor((diff/(1000*60*60))%24);
+  const m = Math.floor((diff/(1000*60))%60);
 
   document.getElementById("vacation").textContent =
-    `✈️ Walt Disney World in ${days}d ${hours}h ${minutes}m`;
+    `✈️ Walt Disney World in ${d}d ${h}h ${m}m`;
 }
-setInterval(updateVacation, 60000);
-updateVacation();
+setInterval(updateTrip, 60000);
+updateTrip();
 
-/* ===================== */
 /* SCHEDULE */
-/* ===================== */
-
 const events = [
-  { date: "2026-04-26T17:30:00", title: "Kohen Music" },
-  { date: "2026-04-26T19:50:00", title: "Flight to Atlanta" },
-  { date: "2026-04-27T09:00:00", title: "Kohen School" },
-  { date: "2026-04-28T09:00:00", title: "Kohen School" }
+  { date:"2026-04-26T17:30:00", title:"Kohen Music" },
+  { date:"2026-04-26T19:50:00", title:"Flight to Atlanta" },
+  { date:"2026-04-27T09:00:00", title:"Kohen School" },
+  { date:"2026-04-28T09:00:00", title:"Kohen School" }
 ];
 
 function updateSchedule() {
   const now = new Date();
-  const container = document.getElementById("schedule");
-  container.innerHTML = "";
+  const el = document.getElementById("schedule");
+  el.innerHTML = "";
 
   const upcoming = events
-    .map(e => ({...e, dateObj: new Date(e.date)}))
-    .filter(e => e.dateObj > now - 24*60*60*1000)
-    .sort((a,b)=>a.dateObj-b.dateObj);
+    .map(e=>({...e, d:new Date(e.date)}))
+    .filter(e=>e.d > now - 86400000)
+    .sort((a,b)=>a.d-b.d);
 
-  if (upcoming.length === 0) {
-    container.innerHTML = "No upcoming events";
+  if (!upcoming.length) {
+    el.innerHTML = "No upcoming events";
     return;
   }
 
-  const next = upcoming.find(e => e.dateObj > now);
+  const next = upcoming.find(e=>e.d>now);
   if (next) {
-    const diffHours = Math.round((next.dateObj - now) / (1000*60*60));
+    const hrs = Math.round((next.d-now)/3600000);
     document.getElementById("nextEvent").textContent =
-      `Next event in ${diffHours} hours`;
+      `Next event in ${hrs} hours`;
   }
 
-  const days = {};
+  const grouped = {};
 
-  upcoming.forEach(e => {
-    const day = e.dateObj.toDateString();
-    if (!days[day]) days[day] = [];
-    days[day].push(e);
+  upcoming.forEach(e=>{
+    const key = e.d.toDateString();
+    if (!grouped[key]) grouped[key]=[];
+    grouped[key].push(e);
   });
 
-  Object.keys(days).slice(0,5).forEach(day => {
-    const header = document.createElement("div");
-    header.innerHTML = `<br><strong>${day}</strong>`;
-    container.appendChild(header);
+  Object.keys(grouped).slice(0,5).forEach(day=>{
+    const h = document.createElement("div");
+    h.innerHTML = `<br><strong>${day}</strong>`;
+    el.appendChild(h);
 
-    days[day].forEach(e => {
+    grouped[day].forEach(e=>{
       const div = document.createElement("div");
       div.className = "event";
       div.textContent =
-        `${e.dateObj.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${e.title}`;
-      container.appendChild(div);
+        `${e.d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} - ${e.title}`;
+      el.appendChild(div);
     });
   });
 }
 
 updateSchedule();
+
 </script>
 
 </body>
