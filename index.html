@@ -44,10 +44,10 @@ body {
   flex:1;
   overflow:auto;
 }
-
-.trivia {
+.highlight {
   font-size:20px;
-  opacity:0.9;
+  margin-bottom:10px;
+  color:#ffd166;
 }
 </style>
 </head>
@@ -59,103 +59,90 @@ body {
   <!-- TOP -->
   <div class="row">
     <div class="card" id="clock"></div>
-    <div class="card big" id="weather">Loading weather...</div>
+    <div class="card big" id="weather"></div>
   </div>
 
   <!-- MIDDLE -->
   <div class="row">
-    <div class="card medium" id="birthday">Loading birthday...</div>
-    <div class="card medium" id="countdown">Loading trip...</div>
+    <div class="card medium" id="birthday"></div>
+    <div class="card medium" id="countdown"></div>
   </div>
 
   <!-- SCHEDULE -->
   <div class="card schedule">
-    <div class="medium">📅 Today's Schedule</div>
-    <div id="events" class="small">Loading...</div>
+    <div class="medium">📅 Schedule</div>
+    <div id="nextEvent" class="highlight"></div>
+    <div id="events" class="small"></div>
   </div>
 
   <!-- TRIVIA -->
-  <div class="card trivia" id="trivia"></div>
+  <div class="card small" id="trivia"></div>
 
 </div>
 
 <script>
 
-// CLOCK WITH SECONDS
+// CLOCK
 function updateClock() {
   const now = new Date();
-
-  let hours = now.getHours();
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const seconds = String(now.getSeconds()).padStart(2, '0');
-
-  const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12;
-
-  const time = `${hours}:${minutes}:${seconds} ${ampm}`;
-
-  const date = now.toLocaleDateString(undefined, {
-    weekday:'long',
-    year:'numeric',
-    month:'long',
-    day:'numeric'
-  });
+  let h = now.getHours();
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
 
   document.getElementById("clock").innerHTML =
-    `🕒 ${time}<br><span class="small">${date}</span>`;
+    `🕒 ${h}:${m}:${s} ${ampm}<br><span class="small">${
+      now.toLocaleDateString(undefined,{
+        weekday:'long',
+        year:'numeric',
+        month:'long',
+        day:'numeric'
+      })
+    }</span>`;
 }
 setInterval(updateClock,1000);
 updateClock();
 
 
-// WEATHER (Fahrenheit)
+// WEATHER
 async function loadWeather() {
   const url = "https://api.open-meteo.com/v1/forecast?latitude=37.4138&longitude=-79.1422&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=America/New_York";
-
   const res = await fetch(url);
   const data = await res.json();
 
-  const current = Math.round(data.current_weather.temperature);
-  const high = Math.round(data.daily.temperature_2m_max[0]);
-  const low = Math.round(data.daily.temperature_2m_min[0]);
-
   document.getElementById("weather").innerHTML =
-    `☀️ ${current}° (H:${high}° L:${low}°) • Lynchburg`;
+    `☀️ ${Math.round(data.current_weather.temperature)}° (H:${Math.round(data.daily.temperature_2m_max[0])}° L:${Math.round(data.daily.temperature_2m_min[0])}°) • Lynchburg`;
 }
 loadWeather();
 
 
-// BIRTHDAYS
+// BIRTHDAY
 const birthdays = [
-  {name:"Kohen", date:"2023-04-13"},
-  {name:"Lauren", date:"1995-06-06"},
-  {name:"Bobby", date:"1996-10-04"}
+  {name:"Kohen", month:4, day:13},
+  {name:"Lauren", month:6, day:6},
+  {name:"Bobby", month:10, day:4}
 ];
 
 function loadBirthday() {
   const today = new Date();
-  let next = null;
-  let minDiff = Infinity;
+  let next, min = Infinity;
 
   birthdays.forEach(b => {
-    const thisYear = new Date(today.getFullYear(), new Date(b.date).getMonth(), new Date(b.date).getDate());
-    const nextDate = thisYear >= today ? thisYear : new Date(today.getFullYear()+1, thisYear.getMonth(), thisYear.getDate());
+    let d = new Date(today.getFullYear(), b.month-1, b.day);
+    if(d < today) d.setFullYear(today.getFullYear()+1);
 
-    const diff = (nextDate - today)/(1000*60*60*24);
-
-    if(diff < minDiff) {
-      minDiff = diff;
-      next = b;
-    }
+    const diff = (d - today)/(1000*60*60*24);
+    if(diff < min){ min=diff; next=b; }
   });
 
   document.getElementById("birthday").innerHTML =
-    `🎂 ${next.name} in ${Math.floor(minDiff)} days`;
+    `🎂 ${next.name} in ${Math.floor(min)} days`;
 }
 loadBirthday();
 
 
-// VACATION COUNTDOWN
+// VACATION
 const tripDate = new Date("2026-06-05T00:00:00");
 
 function updateCountdown() {
@@ -173,75 +160,87 @@ setInterval(updateCountdown,60000);
 updateCountdown();
 
 
-// 🔥 SCHEDULE (WORKING PROXY VERSION)
-async function loadSchedule() {
-  try {
-    const url = "https://calendar.google.com/calendar/ical/lbkeating20%40gmail.com/public/basic.ics";
-    const proxy = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+// 🔥 SMART SCHEDULE
+const schedule = [
+  { date:"2026-04-26", time:"09:00", title:"Church" },
+  { date:"2026-04-26", time:"19:50", title:"Flight to Atlanta ✈️" },
+  { date:"2026-04-27", time:"17:30", title:"Kohen Music 🎵" },
+  { date:"2026-04-28", time:"09:00", title:"Kohen School 🏫" }
+];
 
-    const res = await fetch(proxy);
-    const text = await res.text();
+function loadSchedule() {
+  const now = new Date();
+  const today = now.toISOString().slice(0,10);
 
-    const events = text.split("BEGIN:VEVENT").slice(1);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate()+1);
+  const tomorrowStr = tomorrow.toISOString().slice(0,10);
 
-    const today = new Date();
-    const todayStr = today.toISOString().slice(0,10);
+  const upcoming = schedule
+    .map(e => {
+      const dt = new Date(`${e.date}T${e.time}`);
+      return {...e, dt};
+    })
+    .filter(e =>
+      (e.date === today || e.date === tomorrowStr) &&
+      e.dt > now
+    )
+    .sort((a,b)=>a.dt - b.dt);
 
-    let html = "";
+  const container = document.getElementById("events");
+  const nextBox = document.getElementById("nextEvent");
 
-    events.forEach(e => {
-      const clean = e.replace(/\r?\n\s/g, "");
-
-      const title = clean.match(/SUMMARY:(.*)/)?.[1];
-      const timeRaw = clean.match(/DTSTART.*:(\d{8}T\d{6})/)?.[1];
-
-      if (!title || !timeRaw) return;
-
-      const dateStr = `${timeRaw.slice(0,4)}-${timeRaw.slice(4,6)}-${timeRaw.slice(6,8)}`;
-
-      if (dateStr === todayStr) {
-        const hour = parseInt(timeRaw.slice(9,11));
-        const min = timeRaw.slice(11,13);
-
-        let h = hour % 12 || 12;
-        const ampm = hour >= 12 ? "PM" : "AM";
-
-        html += `
-          <div style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between;">
-            <span>${title}</span>
-            <span>${h}:${min} ${ampm}</span>
-          </div>
-        `;
-      }
-    });
-
-    document.getElementById("events").innerHTML =
-      html || "<p>No events today</p>";
-
-  } catch (e) {
-    document.getElementById("events").innerHTML =
-      "⚠️ Unable to load schedule";
+  if(upcoming.length === 0){
+    container.innerHTML = "No upcoming events";
+    nextBox.innerHTML = "";
+    return;
   }
+
+  // NEXT EVENT TIMER
+  const next = upcoming[0];
+  const diff = next.dt - now;
+
+  const hours = Math.floor(diff/(1000*60*60));
+  const minutes = Math.floor((diff/(1000*60))%60);
+
+  nextBox.innerHTML =
+    `⏳ Next: ${next.title} in ${hours}h ${minutes}m`;
+
+  container.innerHTML = upcoming.map(e => {
+    let h = new Date(`${e.date}T${e.time}`).getHours();
+    const m = e.time.split(":")[1];
+    const ampm = h>=12?"PM":"AM";
+    h = h%12 || 12;
+
+    return `
+      <div style="
+        padding:12px 0;
+        border-bottom:1px solid rgba(255,255,255,0.1);
+        display:flex;
+        justify-content:space-between;
+      ">
+        <span>${e.title}</span>
+        <span>${h}:${m} ${ampm}</span>
+      </div>
+    `;
+  }).join("");
 }
 
 loadSchedule();
+setInterval(loadSchedule,60000);
 
 
-// DISNEY TRIVIA
-const triviaList = [
+// TRIVIA
+const trivia = [
   "Mickey Mouse debuted in Steamboat Willie.",
   "Genie was inspired by Robin Williams' improv.",
-  "Epcot was originally planned as a real city.",
-  "Disney World is about the size of San Francisco.",
+  "Disney World is the size of San Francisco.",
+  "Epcot was planned as a real city.",
   "Cinderella Castle is 189 feet tall."
 ];
 
-function loadTrivia() {
-  const today = new Date().getDate();
-  document.getElementById("trivia").innerHTML =
-    "🎬 Disney Trivia: " + triviaList[today % triviaList.length];
-}
-loadTrivia();
+document.getElementById("trivia").innerHTML =
+  "🎬 Disney Trivia: " + trivia[new Date().getDate() % trivia.length];
 
 </script>
 
