@@ -2,61 +2,68 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Family Hub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
-  margin:0;
-  font-family:-apple-system, BlinkMacSystemFont, sans-serif;
-  color:white;
-  background: radial-gradient(circle at 20% 20%, #1a2a6c, #000);
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  color: white;
+  background: radial-gradient(circle at top left, #1a2a6c, #0b0f2a 70%);
 }
 
 .container {
-  display:flex;
-  flex-direction:column;
-  height:100vh;
-  padding:40px 60px;
-  gap:25px;
-  box-sizing:border-box;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
 }
 
 .row {
-  display:flex;
-  justify-content:space-between;
-  gap:20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
 }
 
 .card {
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(20px);
-  padding:20px 25px;
-  border-radius:20px;
-  box-shadow:0 0 40px rgba(0,0,0,0.4);
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 20px 25px;
+  flex: 1;
 }
 
-.big { font-size:32px; }
-.medium { font-size:22px; }
-.small { font-size:18px; opacity:0.8; }
+.big {
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.sub {
+  opacity: 0.7;
+  margin-top: 5px;
+}
 
 .schedule {
-  flex:1;
-  overflow:auto;
+  min-height: 250px;
 }
 
-.highlight {
-  color:#ffd166;
-  margin-bottom:10px;
-  font-size:20px;
+.event {
+  margin: 6px 0;
+}
+
+.past {
+  opacity: 0.4;
 }
 
 .day-header {
-  margin-top:15px;
-  margin-bottom:5px;
-  font-size:20px;
-  font-weight:600;
-  opacity:0.9;
+  margin-top: 15px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.trivia {
+  opacity: 0.8;
 }
 </style>
 </head>
@@ -65,220 +72,198 @@ body {
 
 <div class="container">
 
+  <!-- TOP ROW -->
   <div class="row">
-    <div class="card" id="clock"></div>
-    <div class="card big" id="weather"></div>
+    <div class="card">
+      <div class="big" id="clock"></div>
+      <div class="sub" id="date"></div>
+    </div>
+
+    <div class="card">
+      <div class="big" id="weather">Loading weather...</div>
+    </div>
   </div>
 
+  <!-- SECOND ROW -->
   <div class="row">
-    <div class="card medium" id="birthday"></div>
-    <div class="card medium" id="countdown"></div>
+    <div class="card" id="birthday"></div>
+    <div class="card" id="vacation"></div>
   </div>
 
+  <!-- SCHEDULE -->
   <div class="card schedule">
-    <div class="medium">📅 Schedule</div>
-    <div id="nextEvent" class="highlight"></div>
-    <div id="events" class="small"></div>
+    <div class="big">📅 Schedule</div>
+    <div id="nextEvent" class="sub"></div>
+    <div id="events"></div>
   </div>
 
-  <div class="card small" id="trivia"></div>
+  <!-- TRIVIA -->
+  <div class="card trivia">
+    🎬 Disney Trivia: Genie was inspired by Robin Williams' improv.
+  </div>
 
 </div>
 
 <script>
-
-// CLOCK
+// CLOCK (with seconds)
 function updateClock() {
   const now = new Date();
 
-  let h = now.getHours();
-  const m = String(now.getMinutes()).padStart(2,'0');
-  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById("clock").textContent =
+    now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-  const ampm = h >= 12 ? "PM" : "AM";
-  h = h % 12 || 12;
-
-  document.getElementById("clock").innerHTML =
-    `🕒 ${h}:${m}:${s} ${ampm}<br>
-     <span class="small">${now.toLocaleDateString(undefined,{
-       weekday:'long',
-       year:'numeric',
-       month:'long',
-       day:'numeric'
-     })}</span>`;
+  document.getElementById("date").textContent =
+    now.toLocaleDateString(undefined, {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
 }
-setInterval(updateClock,1000);
+setInterval(updateClock, 1000);
 updateClock();
 
-
-// WEATHER
+// WEATHER (simple + stable)
 async function loadWeather() {
-  const url = "https://api.open-meteo.com/v1/forecast?latitude=37.4138&longitude=-79.1422&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=America/New_York";
+  try {
+    const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=37.41&longitude=-79.14&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=America/New_York");
+    const data = await res.json();
 
-  const res = await fetch(url);
-  const data = await res.json();
+    const current = Math.round(data.current_weather.temperature);
+    const high = Math.round(data.daily.temperature_2m_max[0]);
+    const low = Math.round(data.daily.temperature_2m_min[0]);
 
-  document.getElementById("weather").innerHTML =
-    `☀️ ${Math.round(data.current_weather.temperature)}° (H:${Math.round(data.daily.temperature_2m_max[0])}° L:${Math.round(data.daily.temperature_2m_min[0])}°) • Lynchburg`;
+    document.getElementById("weather").textContent =
+      `☀️ ${current}° (H:${high}° L:${low}°) • Lynchburg`;
+  } catch {
+    document.getElementById("weather").textContent = "Weather unavailable";
+  }
 }
 loadWeather();
 
-
-// BIRTHDAY
+// BIRTHDAYS (with age)
 const birthdays = [
-  {name:"Kohen", month:4, day:13},
-  {name:"Lauren", month:6, day:6},
-  {name:"Bobby", month:10, day:4}
+  { name: "Kohen", date: "2023-04-13" },
+  { name: "Lauren", date: "1995-06-06" },
+  { name: "Bobby", date: "1996-10-04" }
 ];
 
-function loadBirthday() {
-  const today = new Date();
-  let next, min = Infinity;
-
-  birthdays.forEach(b => {
-    let d = new Date(today.getFullYear(), b.month-1, b.day);
-    if(d < today) d.setFullYear(today.getFullYear()+1);
-
-    const diff = (d - today)/(1000*60*60*24);
-    if(diff < min){ min = diff; next = b; }
-  });
-
-  document.getElementById("birthday").innerHTML =
-    `🎂 ${next.name} in ${Math.floor(min)} days`;
-}
-loadBirthday();
-
-
-// VACATION
-const tripDate = new Date("2026-06-05T00:00:00");
-
-function updateCountdown() {
+function getNextBirthday() {
   const now = new Date();
-  const diff = tripDate - now;
 
-  const d = Math.floor(diff/(1000*60*60*24));
-  const h = Math.floor((diff/(1000*60*60))%24);
-  const m = Math.floor((diff/(1000*60))%60);
+  let soonest = null;
 
-  document.getElementById("countdown").innerHTML =
-    `✈️ Walt Disney World in ${d}d ${h}h ${m}m`;
-}
-setInterval(updateCountdown,60000);
-updateCountdown();
+  birthdays.forEach(person => {
+    const bday = new Date(person.date);
+    const next = new Date(now.getFullYear(), bday.getMonth(), bday.getDate());
 
+    if (next < now) next.setFullYear(now.getFullYear() + 1);
 
-// SCHEDULE
-const schedule = [
-  { date:"2026-04-26", time:"09:00", title:"Church" },
-  { date:"2026-04-26", time:"19:50", title:"Flight to Atlanta ✈️" },
-  { date:"2026-04-27", time:"17:30", title:"Kohen Music 🎵" },
-  { date:"2026-04-28", time:"09:00", title:"Kohen School 🏫" }
-];
+    const diffDays = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
+    const age = next.getFullYear() - bday.getFullYear();
 
-function formatDateHeader(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString(undefined,{
-    weekday:'long',
-    year:'numeric',
-    month:'long',
-    day:'numeric'
+    if (!soonest || diffDays < soonest.days) {
+      soonest = {
+        text: `🎂 ${person.name} turns ${age} in ${diffDays} days`,
+        days: diffDays
+      };
+    }
   });
+
+  document.getElementById("birthday").textContent = soonest.text;
 }
+getNextBirthday();
+
+// VACATION COUNTDOWN
+const vacationDate = new Date("2026-06-05T00:00:00");
+
+function updateVacation() {
+  const now = new Date();
+  const diff = vacationDate - now;
+
+  const days = Math.floor(diff / (1000*60*60*24));
+  const hours = Math.floor((diff / (1000*60*60)) % 24);
+  const mins = Math.floor((diff / (1000*60)) % 60);
+
+  document.getElementById("vacation").textContent =
+    `✈️ Walt Disney World in ${days}d ${hours}h ${mins}m`;
+}
+setInterval(updateVacation, 60000);
+updateVacation();
+
+// SCHEDULE (NEXT 5 DAYS)
+const schedule = [
+  { title: "Church", date: "2026-04-26", time: "09:00" },
+  { title: "Flight to Atlanta", date: "2026-04-26", time: "19:50" },
+  { title: "Kohen Music", date: "2026-04-27", time: "17:30" },
+  { title: "Kohen School", date: "2026-04-28", time: "09:00" },
+  { title: "Kohen School", date: "2026-04-29", time: "09:00" },
+  { title: "Kohen Soccer", date: "2026-05-02", time: "10:00" }
+];
 
 function loadSchedule() {
   const now = new Date();
-  const todayStr = now.toISOString().slice(0,10);
 
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate()+1);
-  const tomorrowStr = tomorrow.toISOString().slice(0,10);
+  // next 5 days
+  const days = [];
+  for (let i=0;i<5;i++){
+    const d = new Date();
+    d.setDate(now.getDate()+i);
+    days.push(d.toISOString().slice(0,10));
+  }
 
-  const parsed = schedule.map(e => ({
-    ...e,
-    dt: new Date(`${e.date}T${e.time}`)
-  }));
-
-  const visible = parsed
-    .filter(e => e.date === todayStr || e.date === tomorrowStr)
+  const events = schedule
+    .map(e => ({
+      ...e,
+      dt: new Date(e.date + "T" + e.time)
+    }))
+    .filter(e => days.includes(e.date))
     .sort((a,b)=>a.dt - b.dt);
 
   const container = document.getElementById("events");
-  const nextBox = document.getElementById("nextEvent");
+  container.innerHTML = "";
 
-  if (visible.length === 0) {
-    container.innerHTML = "No events";
-    nextBox.innerHTML = "";
+  if (!events.length) {
+    container.innerHTML = "<div>No events</div>";
     return;
   }
 
   // NEXT EVENT
-  const upcoming = parsed.filter(e => e.dt > now).sort((a,b)=>a.dt - b.dt);
-
-  if (upcoming.length > 0) {
-    const next = upcoming[0];
-    const diff = next.dt - now;
-
-    const h = Math.floor(diff/(1000*60*60));
-    const m = Math.floor((diff/(1000*60))%60);
-
-    nextBox.innerHTML = `⏳ Next: ${next.title} in ${h}h ${m}m`;
-  } else {
-    nextBox.innerHTML = "✅ No more events today";
+  const next = events.find(e => e.dt > now);
+  if (next) {
+    const diff = Math.round((next.dt - now)/(1000*60*60));
+    document.getElementById("nextEvent").textContent =
+      `Next event in ${diff} hours`;
   }
 
-  // GROUP BY DAY
-  const grouped = {};
-  visible.forEach(e => {
-    if (!grouped[e.date]) grouped[e.date] = [];
-    grouped[e.date].push(e);
+  let currentDay = "";
+
+  events.forEach(e => {
+    if (e.date !== currentDay) {
+      currentDay = e.date;
+
+      const d = new Date(e.date);
+      const header = document.createElement("div");
+      header.className = "day-header";
+      header.textContent = d.toLocaleDateString(undefined,{
+        weekday:'long',month:'long',day:'numeric',year:'numeric'
+      });
+      container.appendChild(header);
+    }
+
+    const div = document.createElement("div");
+    div.className = "event";
+
+    if (e.dt < now) div.classList.add("past");
+
+    div.textContent =
+      `${new Date("1970-01-01T"+e.time).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})} - ${e.title}`;
+
+    container.appendChild(div);
   });
-
-  let html = "";
-
-  Object.keys(grouped).forEach(date => {
-    html += `<div class="day-header">${formatDateHeader(date)}</div>`;
-
-    grouped[date].forEach(e => {
-      let h = e.dt.getHours();
-      const m = String(e.dt.getMinutes()).padStart(2,'0');
-      const ampm = h>=12?"PM":"AM";
-      h = h%12 || 12;
-
-      const isPast = e.dt < now;
-
-      html += `
-        <div style="
-          padding:10px 0;
-          border-bottom:1px solid rgba(255,255,255,0.1);
-          display:flex;
-          justify-content:space-between;
-          opacity:${isPast ? 0.5 : 1};
-        ">
-          <span>${e.title}</span>
-          <span>${h}:${m} ${ampm}</span>
-        </div>
-      `;
-    });
-  });
-
-  container.innerHTML = html;
 }
 
 loadSchedule();
-setInterval(loadSchedule,60000);
-
-
-// TRIVIA
-const trivia = [
-  "Mickey Mouse debuted in Steamboat Willie.",
-  "Genie was inspired by Robin Williams' improv.",
-  "Disney World is the size of San Francisco.",
-  "Epcot was planned as a real city.",
-  "Cinderella Castle is 189 feet tall."
-];
-
-document.getElementById("trivia").innerHTML =
-  "🎬 Disney Trivia: " + trivia[new Date().getDate() % trivia.length];
 
 </script>
 
