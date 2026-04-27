@@ -2,176 +2,182 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Family Hub</title>
 
 <style>
 body {
-  margin: 0;
-  background: radial-gradient(circle at top, #1a1a2e, #000000);
-  color: white;
+  margin:0;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  color:white;
+  background: radial-gradient(circle at 20% 20%, #1a2a6c, #000);
 }
 
 .container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  padding: 50px 80px;
-  box-sizing: border-box;
-  gap: 25px;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  padding:40px 60px;
+  gap:25px;
+  box-sizing:border-box;
 }
 
-.top-row, .middle-row {
-  display: flex;
-  justify-content: space-between;
+.row {
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
 }
-
-.top-row { font-size: 36px; }
-.middle-row { font-size: 30px; }
 
 .card {
-  background: rgba(255,255,255,0.06);
-  padding: 25px 35px;
-  border-radius: 22px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(20px);
+  padding:20px 25px;
+  border-radius:20px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.4);
 }
 
+.big { font-size:32px; }
+.medium { font-size:22px; }
+.small { font-size:18px; opacity:0.8; }
+
 .schedule {
-  flex-grow: 1;
-  font-size: 26px;
+  flex:1;
+  overflow:auto;
 }
 
 .trivia {
-  font-size: 24px;
-  opacity: 0.9;
+  font-size:20px;
+  opacity:0.9;
 }
 </style>
 </head>
 
 <body>
+
 <div class="container">
 
-<!-- TOP -->
-<div class="top-row">
-  <div class="card" id="clock"></div>
-  <div class="card" id="weather">Loading weather...</div>
-</div>
+  <!-- TOP -->
+  <div class="row">
+    <div class="card" id="clock"></div>
+    <div class="card big" id="weather">Loading weather...</div>
+  </div>
 
-<!-- MIDDLE -->
-<div class="middle-row">
-  <div class="card" id="birthday"></div>
-  <div class="card" id="countdown"></div>
-</div>
+  <!-- MIDDLE -->
+  <div class="row">
+    <div class="card medium" id="birthday">Loading birthday...</div>
+    <div class="card medium" id="countdown">Loading trip...</div>
+  </div>
 
-<!-- SCHEDULE -->
-<div class="card schedule">
-  📅 Today's Schedule
-  <div id="events" style="margin-top:15px;"></div>
-</div>
+  <!-- SCHEDULE -->
+  <div class="card schedule">
+    <div class="medium">📅 Today's Schedule</div>
+    <div id="events" class="small">Loading...</div>
+  </div>
 
-<!-- TRIVIA -->
-<div class="card trivia" id="trivia"></div>
+  <!-- TRIVIA -->
+  <div class="card trivia" id="trivia"></div>
 
 </div>
 
 <script>
-// CLOCK (WITH SECONDS)
+
+// CLOCK WITH SECONDS
 function updateClock() {
   const now = new Date();
 
-  const time = now.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
+  let hours = now.getHours();
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+
+  const time = `${hours}:${minutes}:${seconds} ${ampm}`;
 
   const date = now.toLocaleDateString(undefined, {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+    weekday:'long',
+    year:'numeric',
+    month:'long',
+    day:'numeric'
   });
 
   document.getElementById("clock").innerHTML =
-    `🕒 ${time}<br><span style="font-size:20px;">${date}</span>`;
+    `🕒 ${time}<br><span class="small">${date}</span>`;
 }
-setInterval(updateClock, 1000);
+setInterval(updateClock,1000);
 updateClock();
 
-// WEATHER
-async function getWeather() {
-  try {
-    const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=37.4138&longitude=-79.1422&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=America/New_York");
-    const data = await res.json();
 
-    const current = Math.round(data.current_weather.temperature);
-    const high = Math.round(data.daily.temperature_2m_max[0]);
-    const low = Math.round(data.daily.temperature_2m_min[0]);
+// WEATHER (Fahrenheit)
+async function loadWeather() {
+  const url = "https://api.open-meteo.com/v1/forecast?latitude=37.4138&longitude=-79.1422&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=America/New_York";
 
-    document.getElementById("weather").innerHTML =
-      `☀️ ${current}° (H:${high}° L:${low}°) • Lynchburg`;
-  } catch {
-    document.getElementById("weather").innerText = "Weather unavailable";
-  }
+  const res = await fetch(url);
+  const data = await res.json();
+
+  const current = Math.round(data.current_weather.temperature);
+  const high = Math.round(data.daily.temperature_2m_max[0]);
+  const low = Math.round(data.daily.temperature_2m_min[0]);
+
+  document.getElementById("weather").innerHTML =
+    `☀️ ${current}° (H:${high}° L:${low}°) • Lynchburg`;
 }
-getWeather();
-setInterval(getWeather, 600000);
+loadWeather();
 
-// BIRTHDAY
+
+// BIRTHDAYS
 const birthdays = [
-  { name: "Kohen", date: "2023-04-13" },
-  { name: "Lauren", date: "1995-06-06" },
-  { name: "Bobby", date: "1996-10-04" }
+  {name:"Kohen", date:"2023-04-13"},
+  {name:"Lauren", date:"1995-06-06"},
+  {name:"Bobby", date:"1996-10-04"}
 ];
 
-function updateBirthday() {
+function loadBirthday() {
   const today = new Date();
   let next = null;
   let minDiff = Infinity;
 
   birthdays.forEach(b => {
-    const nextBirthday = new Date(today.getFullYear(), new Date(b.date).getMonth(), new Date(b.date).getDate());
-    if (nextBirthday < today) nextBirthday.setFullYear(today.getFullYear() + 1);
+    const thisYear = new Date(today.getFullYear(), new Date(b.date).getMonth(), new Date(b.date).getDate());
+    const nextDate = thisYear >= today ? thisYear : new Date(today.getFullYear()+1, thisYear.getMonth(), thisYear.getDate());
 
-    const diff = nextBirthday - today;
+    const diff = (nextDate - today)/(1000*60*60*24);
 
-    if (diff < minDiff) {
+    if(diff < minDiff) {
       minDiff = diff;
-      next = { ...b, nextBirthday };
+      next = b;
     }
   });
 
-  const days = Math.ceil(minDiff / (1000 * 60 * 60 * 24));
-  const age = next.nextBirthday.getFullYear() - new Date(next.date).getFullYear();
-
   document.getElementById("birthday").innerHTML =
-    `🎂 ${next.name} turns ${age} in ${days} days`;
+    `🎂 ${next.name} in ${Math.floor(minDiff)} days`;
 }
-updateBirthday();
+loadBirthday();
 
-// COUNTDOWN
+
+// VACATION COUNTDOWN
 const tripDate = new Date("2026-06-05T00:00:00");
 
 function updateCountdown() {
   const now = new Date();
   const diff = tripDate - now;
 
-  const days = Math.floor(diff / (1000*60*60*24));
-  const hours = Math.floor((diff / (1000*60*60)) % 24);
-  const minutes = Math.floor((diff / (1000*60)) % 60);
+  const d = Math.floor(diff/(1000*60*60*24));
+  const h = Math.floor((diff/(1000*60*60))%24);
+  const m = Math.floor((diff/(1000*60))%60);
 
   document.getElementById("countdown").innerHTML =
-    `✈️ Walt Disney World in ${days}d ${hours}h ${minutes}m`;
+    `✈️ Walt Disney World in ${d}d ${h}h ${m}m`;
 }
-setInterval(updateCountdown, 60000);
+setInterval(updateCountdown,60000);
 updateCountdown();
 
-// ✅ FINAL SCHEDULE (STABLE VERSION)
+
+// 🔥 SCHEDULE (WORKING PROXY VERSION)
 async function loadSchedule() {
   try {
     const url = "https://calendar.google.com/calendar/ical/lbkeating20%40gmail.com/public/basic.ics";
-    const proxy = "https://corsproxy.io/?" + encodeURIComponent(url);
+    const proxy = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
 
     const res = await fetch(proxy);
     const text = await res.text();
@@ -181,85 +187,63 @@ async function loadSchedule() {
     const today = new Date();
     const todayStr = today.toISOString().slice(0,10);
 
-    const todaysEvents = [];
+    let html = "";
 
     events.forEach(e => {
       const clean = e.replace(/\r?\n\s/g, "");
 
-      const titleMatch = clean.match(/SUMMARY:(.*)/);
-      const timeMatch = clean.match(/DTSTART.*:(\d{8}T\d{6})/);
+      const title = clean.match(/SUMMARY:(.*)/)?.[1];
+      const timeRaw = clean.match(/DTSTART.*:(\d{8}T\d{6})/)?.[1];
 
-      if (!titleMatch || !timeMatch) return;
+      if (!title || !timeRaw) return;
 
-      const raw = timeMatch[1];
-      const dateStr = `${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}`;
+      const dateStr = `${timeRaw.slice(0,4)}-${timeRaw.slice(4,6)}-${timeRaw.slice(6,8)}`;
 
       if (dateStr === todayStr) {
-        const hour = parseInt(raw.slice(9,11));
-        const min = raw.slice(11,13);
+        const hour = parseInt(timeRaw.slice(9,11));
+        const min = timeRaw.slice(11,13);
 
         let h = hour % 12 || 12;
         const ampm = hour >= 12 ? "PM" : "AM";
 
-        todaysEvents.push({
-          title: titleMatch[1],
-          time: `${h}:${min} ${ampm}`,
-          sort: hour * 60 + parseInt(min)
-        });
+        html += `
+          <div style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between;">
+            <span>${title}</span>
+            <span>${h}:${min} ${ampm}</span>
+          </div>
+        `;
       }
     });
 
-    todaysEvents.sort((a,b) => a.sort - b.sort);
+    document.getElementById("events").innerHTML =
+      html || "<p>No events today</p>";
 
-    const container = document.getElementById("events");
-
-    if (todaysEvents.length === 0) {
-      container.innerHTML = "<p>No events today</p>";
-      return;
-    }
-
-    container.innerHTML = todaysEvents.map(e => `
-      <div style="
-        padding:12px 0;
-        border-bottom:1px solid rgba(255,255,255,0.1);
-        display:flex;
-        justify-content:space-between;
-      ">
-        <span>${e.title}</span>
-        <span style="opacity:0.7">${e.time}</span>
-      </div>
-    `).join("");
-
-  } catch {
-    document.getElementById("events").innerHTML = "Unable to load schedule";
+  } catch (e) {
+    document.getElementById("events").innerHTML =
+      "⚠️ Unable to load schedule";
   }
 }
+
 loadSchedule();
 
-// TRIVIA
+
+// DISNEY TRIVIA
 const triviaList = [
-  "Mickey Mouse's first appearance was in Steamboat Willie.",
-  "Elsa was originally supposed to be a villain.",
-  "The Lion King is inspired by Hamlet.",
-  "Walt Disney was afraid of mice.",
-  "Toy Story was the first fully computer-animated movie.",
-  "Pirates of the Caribbean ride came before the movies.",
+  "Mickey Mouse debuted in Steamboat Willie.",
   "Genie was inspired by Robin Williams' improv.",
-  "Disney World is about the size of San Francisco."
+  "Epcot was originally planned as a real city.",
+  "Disney World is about the size of San Francisco.",
+  "Cinderella Castle is 189 feet tall."
 ];
 
-function updateTrivia() {
-  const start = new Date(2024, 0, 1);
-  const now = new Date();
-  const days = Math.floor((now - start) / (1000*60*60*24));
-  const index = days % triviaList.length;
-
+function loadTrivia() {
+  const today = new Date().getDate();
   document.getElementById("trivia").innerHTML =
-    `🎬 Disney Trivia: ${triviaList[index]}`;
+    "🎬 Disney Trivia: " + triviaList[today % triviaList.length];
 }
+loadTrivia();
 
-updateTrivia();
-setInterval(updateTrivia, 3600000);
 </script>
+
 </body>
 </html>
