@@ -1,156 +1,63 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Keating Family Hub</title>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
 body {
-  color: white;
-  min-height: 100vh;
-  overflow-x: hidden;
+  margin:0;
+  font-family:-apple-system,sans-serif;
+  color:white;
 
   background:
-    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), transparent 40%),
-    radial-gradient(circle at 80% 30%, rgba(255,255,255,0.06), transparent 40%),
-    linear-gradient(160deg, #0a1f44, #0d2f5f 40%, #05152c);
+    radial-gradient(circle at 20% 20%, rgba(0,150,255,0.15), transparent 40%),
+    radial-gradient(circle at 80% 10%, rgba(255,200,120,0.1), transparent 40%),
+    linear-gradient(#031024,#020617);
 }
 
 /* HEADER */
 .header {
-  text-align: center;
-  padding: 40px 20px 20px;
+  display:flex;
+  justify-content:space-between;
+  padding:30px 40px 10px;
 }
 
-.header h1 {
-  font-size: 32px;
-  letter-spacing: 4px;
+.title {
+  letter-spacing:4px;
+  font-size:18px;
 }
 
-.header p {
-  opacity: 0.7;
-  margin-top: 6px;
+.greeting {
+  opacity:0.7;
 }
 
 /* GRID */
 .container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  padding: 20px 60px 120px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  padding:20px 40px 40px;
 }
 
 /* CARDS */
 .card {
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(18px);
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(18px);
+  border-radius:20px;
+  padding:20px;
 }
 
-/* CLOCK */
-.time {
-  font-size: 40px;
-  font-weight: 600;
-}
+/* TEXT */
+.big { font-size:32px; font-weight:700; }
+.sub { opacity:0.7; margin-top:5px; }
 
-.date {
-  opacity: 0.7;
-  margin-top: 6px;
-}
+/* FULL WIDTH */
+.full { grid-column:span 2; }
 
-/* SCHEDULE */
-.schedule {
-  grid-column: span 2;
-}
-
-.schedule h2 {
-  margin-bottom: 10px;
-}
-
-.day-block {
-  margin-top: 14px;
-}
-
-.day-title {
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.event {
-  opacity: 0.9;
-  margin-left: 10px;
-}
-
-/* 🌊 OCEAN */
-.ocean {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  height: 140px;
-  background: linear-gradient(to bottom, #0a3a5f, #06283d);
-  overflow: hidden;
-  z-index: 1;
-}
-
-.wave {
-  position: absolute;
-  width: 200%;
-  height: 100%;
-  opacity: 0.4;
-}
-
-.wave1 {
-  background: radial-gradient(circle at 50% 120%, #1e90ff 20%, transparent 70%);
-  animation: waveMove 8s linear infinite;
-}
-
-.wave2 {
-  background: radial-gradient(circle at 50% 120%, #00bfff 20%, transparent 70%);
-  animation: waveMove 12s linear infinite reverse;
-  opacity: 0.3;
-}
-
-.wave3 {
-  background: radial-gradient(circle at 50% 120%, #87cefa 20%, transparent 70%);
-  animation: waveMove 16s linear infinite;
-  opacity: 0.2;
-}
-
-@keyframes waveMove {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-
-/* 🚢 SHIP */
-.ship-container {
-  position: fixed;
-  bottom: 95px;
-  width: 100%;
-  z-index: 3;
-  pointer-events: none;
-}
-
-.ship {
-  width: 260px;
-  position: absolute;
-  left: -300px;
-  animation: sail 12s linear infinite;
-}
-
-@keyframes sail {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(calc(100vw + 300px)); }
-}
+/* EVENTS */
+.event { margin:5px 0; }
 
 </style>
 </head>
@@ -158,138 +65,184 @@ body {
 <body>
 
 <div class="header">
-  <h1>KEATING FAMILY HUB</h1>
-  <p>Welcome back</p>
+  <div class="title">KEATING FAMILY HUB</div>
+  <div class="greeting" id="greeting"></div>
 </div>
 
 <div class="container">
 
+  <!-- CLOCK -->
   <div class="card">
-    <div class="time" id="time"></div>
-    <div class="date" id="date"></div>
+    <div class="big" id="clock"></div>
+    <div class="sub" id="date"></div>
   </div>
 
+  <!-- WEATHER -->
   <div class="card">
-    ☀️ 53° • Lynchburg
+    <div class="big" id="weather">Loading...</div>
   </div>
 
+  <!-- BIRTHDAY -->
   <div class="card" id="birthday"></div>
 
-  <div class="card" id="trip"></div>
+  <!-- VACATION -->
+  <div class="card" id="vacation"></div>
 
-  <div class="card schedule">
-    <h2>📅 Schedule</h2>
-    <div id="nextEvent"></div>
+  <!-- SCHEDULE -->
+  <div class="card full">
+    <div class="big">📅 Schedule</div>
+    <div id="nextEvent" class="sub"></div>
     <div id="schedule"></div>
   </div>
 
-  <div class="card">
-    🎬 Disney Trivia: Genie was inspired by Robin Williams' improv.
-  </div>
+  <!-- TRIVIA -->
+  <div class="card full" id="trivia"></div>
 
-</div>
-
-<!-- 🌊 Ocean -->
-<div class="ocean">
-  <div class="wave wave1"></div>
-  <div class="wave wave2"></div>
-  <div class="wave wave3"></div>
-</div>
-
-<!-- 🚢 Ship -->
-<div class="ship-container">
-  <img src="./ship.png" class="ship">
 </div>
 
 <script>
+
+/* GREETING */
+function updateGreeting() {
+  const h = new Date().getHours();
+  const g =
+    h < 12 ? "Good Morning" :
+    h < 18 ? "Good Afternoon" :
+    "Good Evening";
+
+  document.getElementById("greeting").innerText = g;
+}
+updateGreeting();
 
 /* CLOCK */
 function updateClock() {
   const now = new Date();
 
-  document.getElementById("time").innerText =
-    now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  document.getElementById("clock").innerText =
+    now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
 
   document.getElementById("date").innerText =
-    now.toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+    now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
 }
-
-setInterval(updateClock, 1000);
+setInterval(updateClock,1000);
 updateClock();
 
-/* BIRTHDAY */
-const birthday = new Date("June 6, 1995");
-const today = new Date();
+/* WEATHER */
+fetch("https://api.open-meteo.com/v1/forecast?latitude=37.41&longitude=-79.14&current_weather=true&temperature_unit=fahrenheit")
+.then(r=>r.json())
+.then(d=>{
+  document.getElementById("weather").innerText =
+    `☀️ ${Math.round(d.current_weather.temperature)}° • Lynchburg`;
+});
 
-let nextBirthday = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate());
-if (today > nextBirthday) nextBirthday.setFullYear(today.getFullYear()+1);
-
-const daysToBirthday = Math.ceil((nextBirthday - today)/(1000*60*60*24));
-const age = nextBirthday.getFullYear() - birthday.getFullYear();
-
-document.getElementById("birthday").innerText =
-  `🎂 Lauren turns ${age} in ${daysToBirthday} days`;
-
-/* TRIP */
-const trip = new Date("June 5, 2026");
-const diff = trip - today;
-
-const days = Math.floor(diff/(1000*60*60*24));
-const hours = Math.floor((diff/(1000*60*60)) % 24);
-
-document.getElementById("trip").innerText =
-  `✈️ Walt Disney World in ${days}d ${hours}h`;
-
-/* EVENTS (EDIT THESE) */
-const events = [
-  { title:"Kohen Music", time:new Date("April 26, 2026 17:30") },
-  { title:"Flight to Atlanta", time:new Date("April 26, 2026 19:50") },
-  { title:"Kohen School", time:new Date("April 27, 2026 09:00") },
-  { title:"Kohen School", time:new Date("April 28, 2026 09:00") },
-  { title:"Kohen School", time:new Date("April 29, 2026 09:00") }
+/* BIRTHDAYS */
+const birthdays = [
+  {name:"Kohen", date:"2023-04-13"},
+  {name:"Lauren", date:"1995-06-06"},
+  {name:"Bobby", date:"1996-10-04"}
 ];
 
-/* SCHEDULE */
-function renderSchedule() {
-  const now = new Date();
+function updateBirthday(){
+  const now=new Date();
+  let next=null;
 
-  const upcoming = events.filter(e => e.time > now);
+  birthdays.forEach(p=>{
+    let b=new Date(p.date);
+    let n=new Date(now.getFullYear(),b.getMonth(),b.getDate());
+    if(n<now) n.setFullYear(now.getFullYear()+1);
 
-  if (upcoming.length > 0) {
-    const next = upcoming[0];
-    const diff = next.time - now;
-    const hours = Math.round(diff/(1000*60*60));
+    let diff=Math.ceil((n-now)/86400000);
+    let age=n.getFullYear()-b.getFullYear();
+
+    if(!next||diff<next.diff) next={...p,diff,age};
+  });
+
+  document.getElementById("birthday").innerText =
+    `🎂 ${next.name} turns ${next.age} in ${next.diff} days`;
+}
+updateBirthday();
+
+/* VACATION */
+const trip=new Date("2026-06-05");
+
+function updateTrip(){
+  const now=new Date();
+  const diff=trip-now;
+
+  const d=Math.floor(diff/86400000);
+  const h=Math.floor((diff/3600000)%24);
+  const m=Math.floor((diff/60000)%60);
+
+  document.getElementById("vacation").innerText =
+    `✈️ Disney Trip in ${d}d ${h}h ${m}m`;
+}
+setInterval(updateTrip,60000);
+updateTrip();
+
+/* EVENTS FROM CALENDAR */
+function getEvents(){
+  return JSON.parse(localStorage.getItem("events")||"[]")
+    .map(e=>({...e,time:new Date(e.time)}))
+    .sort((a,b)=>a.time-b.time);
+}
+
+function renderSchedule(){
+  const now=new Date();
+  const events=getEvents().filter(e=>e.time>now);
+
+  if(events.length){
+    const hrs=Math.floor((events[0].time-now)/3600000);
     document.getElementById("nextEvent").innerText =
-      `Next event in ${hours} hours`;
+      `Next event in ${hrs} hours`;
   }
 
-  let html = "";
-  const daysToShow = 5;
+  let html="";
 
-  for (let i=0; i<daysToShow; i++) {
-    const day = new Date();
+  for(let i=0;i<5;i++){
+    const day=new Date();
     day.setDate(day.getDate()+i);
 
-    const dayEvents = upcoming.filter(e =>
-      e.time.toDateString() === day.toDateString()
+    const dayEvents=events.filter(e =>
+      e.time.toDateString()===day.toDateString()
     );
 
-    if (dayEvents.length > 0) {
-      html += `<div class="day-block">`;
-      html += `<div class="day-title">${day.toDateString()}</div>`;
+    if(dayEvents.length){
+      html+=`<div class="sub">${day.toDateString()}</div>`;
 
-      dayEvents.forEach(e => {
-        html += `<div class="event">${e.time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${e.title}</div>`;
+      dayEvents.forEach(e=>{
+        html+=`<div class="event">
+          ${e.time.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+          — ${e.title}
+        </div>`;
       });
-
-      html += `</div>`;
     }
   }
 
-  document.getElementById("schedule").innerHTML = html;
-}
+  if(!html) html="No events";
 
+  document.getElementById("schedule").innerHTML=html;
+}
 renderSchedule();
+window.addEventListener("storage",renderSchedule);
+
+/* DISNEY TRIVIA (changes daily at 2AM) */
+const triviaList=[
+  "Mickey was almost named Mortimer.",
+  "Cinderella Castle has no bricks.",
+  "Toy Story was Pixar’s first film.",
+  "Epcot was Walt Disney’s real city vision.",
+  "The Jungle Cruise skippers improv every ride."
+];
+
+function updateTrivia(){
+  const now=new Date();
+  const dayIndex=Math.floor((now - new Date(2020,0,1)) / 86400000);
+  const trivia = triviaList[dayIndex % triviaList.length];
+
+  document.getElementById("trivia").innerText =
+    "🎬 Disney Trivia: " + trivia;
+}
+updateTrivia();
 
 </script>
 
