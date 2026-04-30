@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendar</title>
+
+<style>
+body {
+  margin:0;
+  font-family:-apple-system,sans-serif;
+  background:#031024;
+  color:white;
+}
+
+/* HEADER */
+.header {
+  text-align:center;
+  padding:20px;
+  font-size:20px;
+}
+
+/* MONTH NAV */
+.nav {
+  display:flex;
+  justify-content:space-between;
+  padding:0 20px 10px;
+}
+
+/* GRID */
+.calendar {
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:6px;
+  padding:10px;
+}
+
+.day {
+  background:rgba(255,255,255,0.08);
+  border-radius:10px;
+  padding:6px;
+  min-height:80px;
+  font-size:12px;
+}
+
+.day-header {
+  font-weight:600;
+  margin-bottom:4px;
+}
+
+.event {
+  font-size:10px;
+  padding:2px 4px;
+  border-radius:4px;
+  margin-bottom:2px;
+}
+
+.family { background:#4da6ff; }
+.work { background:#ff9f43; }
+.travel { background:#10ac84; }
+
+/* MODAL */
+.modal {
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:#02142b;
+  padding:20px;
+  border-top-left-radius:20px;
+  border-top-right-radius:20px;
+}
+
+input,select,button {
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border:none;
+  border-radius:10px;
+}
+
+button {
+  background:#4da6ff;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">📆 Calendar</div>
+
+<div class="nav">
+  <button onclick="prev()">◀</button>
+  <div id="month"></div>
+  <button onclick="next()">▶</button>
+</div>
+
+<div class="calendar" id="calendar"></div>
+
+<!-- MODAL -->
+<div class="modal" id="modal" style="display:none;">
+  <div id="dateLabel"></div>
+
+  <input id="title" placeholder="Event name">
+  <input type="time" id="time">
+
+  <select id="category">
+    <option value="family">Family</option>
+    <option value="work">Work</option>
+    <option value="travel">Travel</option>
+  </select>
+
+  <label>
+    <input type="checkbox" id="repeat"> Weekly repeat
+  </label>
+
+  <button onclick="save()">Save Event</button>
+  <button onclick="closeModal()">Close</button>
+</div>
+
+<script>
+
+let current = new Date();
+let selectedDay = null;
+
+function getEvents(){
+  return JSON.parse(localStorage.getItem("events")||"[]");
+}
+
+function saveEvents(events){
+  localStorage.setItem("events",JSON.stringify(events));
+}
+
+function render(){
+  const y=current.getFullYear();
+  const m=current.getMonth();
+
+  document.getElementById("month").innerText =
+    current.toLocaleString('default',{month:'long',year:'numeric'});
+
+  const first=new Date(y,m,1).getDay();
+  const days=new Date(y,m+1,0).getDate();
+
+  const cal=document.getElementById("calendar");
+  cal.innerHTML="";
+
+  for(let i=0;i<first;i++) cal.innerHTML+="<div></div>";
+
+  for(let d=1;d<=days;d++){
+    const date=new Date(y,m,d);
+
+    const events=getEvents().filter(e=>{
+      const ed=new Date(e.time);
+
+      if(e.repeat){
+        return ed.getDay()===date.getDay();
+      }
+
+      return ed.toDateString()===date.toDateString();
+    });
+
+    let html=`<div class="day" onclick="openModal(${d})">
+      <div class="day-header">${d}</div>`;
+
+    events.forEach(e=>{
+      html+=`<div class="event ${e.category}">
+        ${new Date(e.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+      </div>`;
+    });
+
+    html+="</div>";
+
+    cal.innerHTML+=html;
+  }
+}
+
+function openModal(day){
+  selectedDay=day;
+  document.getElementById("modal").style.display="block";
+
+  const date=new Date(current.getFullYear(),current.getMonth(),day);
+  document.getElementById("dateLabel").innerText=date.toDateString();
+}
+
+function closeModal(){
+  document.getElementById("modal").style.display="none";
+}
+
+function save(){
+  const title=document.getElementById("title").value;
+  const time=document.getElementById("time").value;
+  const category=document.getElementById("category").value;
+  const repeat=document.getElementById("repeat").checked;
+
+  const date=new Date(current.getFullYear(),current.getMonth(),selectedDay);
+
+  const full=new Date(`${date.toISOString().split('T')[0]}T${time}`);
+
+  const events=getEvents();
+  events.push({
+    id:Date.now(),
+    title,
+    time:full.toISOString(),
+    category,
+    repeat
+  });
+
+  saveEvents(events);
+
+  closeModal();
+  render();
+}
+
+function prev(){
+  current.setMonth(current.getMonth()-1);
+  render();
+}
+
+function next(){
+  current.setMonth(current.getMonth()+1);
+  render();
+}
+
+render();
+
+</script>
+
+</body>
+</html>
