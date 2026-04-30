@@ -13,59 +13,66 @@ body {
   color:white;
 }
 
-/* HEADER */
-.header {
+/* ===== HEADER ===== */
+.topbar {
   display:flex;
-  justify-content:space-between;
   align-items:center;
-  padding:20px;
-}
-
-.header-title {
-  font-size:20px;
-}
-
-.home-btn {
-  background:#4da6ff;
-  border:none;
-  border-radius:8px;
-  padding:8px 12px;
-  color:white;
-}
-
-/* NAV */
-.nav {
-  display:flex;
   justify-content:space-between;
-  padding:0 20px 10px;
+  padding:16px 20px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
 }
 
-/* GRID */
+.left, .center, .right {
+  display:flex;
+  align-items:center;
+}
+
+.center {
+  font-size:18px;
+  font-weight:600;
+  letter-spacing:1px;
+}
+
+.home-btn, .nav-btn {
+  background:rgba(255,255,255,0.08);
+  border:none;
+  border-radius:10px;
+  padding:10px 14px;
+  color:white;
+  font-size:14px;
+  backdrop-filter:blur(10px);
+}
+
+.right .nav-btn {
+  margin-left:8px;
+}
+
+/* ===== CALENDAR GRID ===== */
 .calendar {
   display:grid;
   grid-template-columns:repeat(7,1fr);
-  gap:6px;
-  padding:10px;
+  gap:8px;
+  padding:20px;
 }
 
 .day {
   background:rgba(255,255,255,0.08);
-  border-radius:10px;
-  padding:6px;
-  min-height:80px;
+  border-radius:14px;
+  padding:8px;
+  min-height:90px;
   font-size:12px;
 }
 
 .day-header {
   font-weight:600;
-  margin-bottom:4px;
+  margin-bottom:6px;
 }
 
 .event {
-  font-size:10px;
-  padding:2px 4px;
-  border-radius:4px;
-  margin-bottom:2px;
+  font-size:11px;
+  padding:3px 6px;
+  border-radius:6px;
+  margin-bottom:4px;
   cursor:pointer;
 }
 
@@ -73,7 +80,7 @@ body {
 .work { background:#ff9f43; }
 .travel { background:#10ac84; }
 
-/* MODAL */
+/* ===== MODAL ===== */
 .modal {
   position:fixed;
   bottom:0;
@@ -93,8 +100,8 @@ input, textarea, select, button {
 }
 
 textarea {
-  resize:none;
   height:80px;
+  resize:none;
 }
 
 button {
@@ -110,18 +117,21 @@ button {
 
 <body>
 
-<div class="header">
-  <button class="home-btn" onclick="goHome()">🏠 Home</button>
-  <div class="header-title">📆 Calendar</div>
-  <div></div>
+<!-- HEADER -->
+<div class="topbar">
+  <div class="left">
+    <button class="home-btn" onclick="goHome()">🏠</button>
+  </div>
+
+  <div class="center" id="month"></div>
+
+  <div class="right">
+    <button class="nav-btn" onclick="prev()">◀</button>
+    <button class="nav-btn" onclick="next()">▶</button>
+  </div>
 </div>
 
-<div class="nav">
-  <button onclick="prev()">◀</button>
-  <div id="month"></div>
-  <button onclick="next()">▶</button>
-</div>
-
+<!-- CALENDAR -->
 <div class="calendar" id="calendar"></div>
 
 <!-- MODAL -->
@@ -157,7 +167,7 @@ let current = new Date();
 let selectedDay = null;
 let selectedEventId = null;
 
-/* NAV HOME */
+/* HOME NAV */
 function goHome(){
   window.location.href = "index.html";
 }
@@ -215,7 +225,7 @@ function render(){
   }
 }
 
-/* OPEN NEW */
+/* NEW EVENT */
 function openModal(day){
   selectedDay=day;
   selectedEventId=null;
@@ -229,10 +239,11 @@ function openModal(day){
   document.getElementById("description").value="";
   document.getElementById("time").value="";
   document.getElementById("repeat").checked=false;
+
   document.getElementById("deleteBtn").style.display="none";
 }
 
-/* EDIT */
+/* EDIT EVENT */
 function eventClick(e,id){
   e.stopPropagation();
 
