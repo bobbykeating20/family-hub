@@ -20,7 +20,7 @@ body {
   font-size:20px;
 }
 
-/* MONTH NAV */
+/* NAV */
 .nav {
   display:flex;
   justify-content:space-between;
@@ -53,6 +53,7 @@ body {
   padding:2px 4px;
   border-radius:4px;
   margin-bottom:2px;
+  cursor:pointer;
 }
 
 .family { background:#4da6ff; }
@@ -81,6 +82,10 @@ input,select,button {
 button {
   background:#4da6ff;
   color:white;
+}
+
+.delete {
+  background:#ff5c5c;
 }
 </style>
 </head>
@@ -115,6 +120,11 @@ button {
   </label>
 
   <button onclick="save()">Save Event</button>
+
+  <button id="deleteBtn" class="delete" onclick="deleteEvent()" style="display:none;">
+    Delete Event
+  </button>
+
   <button onclick="closeModal()">Close</button>
 </div>
 
@@ -122,7 +132,9 @@ button {
 
 let current = new Date();
 let selectedDay = null;
+let selectedEventId = null;
 
+/* STORAGE */
 function getEvents(){
   return JSON.parse(localStorage.getItem("events")||"[]");
 }
@@ -131,6 +143,7 @@ function saveEvents(events){
   localStorage.setItem("events",JSON.stringify(events));
 }
 
+/* RENDER CALENDAR */
 function render(){
   const y=current.getFullYear();
   const m=current.getMonth();
@@ -163,7 +176,8 @@ function render(){
       <div class="day-header">${d}</div>`;
 
     events.forEach(e=>{
-      html+=`<div class="event ${e.category}">
+      html+=`<div class="event ${e.category}"
+        onclick="eventClick(event, ${e.id})">
         ${new Date(e.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
       </div>`;
     });
@@ -174,36 +188,73 @@ function render(){
   }
 }
 
+/* OPEN NEW EVENT */
 function openModal(day){
   selectedDay=day;
+  selectedEventId=null;
+
   document.getElementById("modal").style.display="block";
 
   const date=new Date(current.getFullYear(),current.getMonth(),day);
   document.getElementById("dateLabel").innerText=date.toDateString();
+
+  document.getElementById("title").value="";
+  document.getElementById("time").value="";
+  document.getElementById("repeat").checked=false;
+  document.getElementById("deleteBtn").style.display="none";
 }
 
-function closeModal(){
-  document.getElementById("modal").style.display="none";
+/* CLICK EXISTING EVENT */
+function eventClick(e,id){
+  e.stopPropagation();
+
+  const ev=getEvents().find(x=>x.id===id);
+  selectedEventId=id;
+
+  document.getElementById("modal").style.display="block";
+  document.getElementById("title").value=ev.title;
+
+  const t=new Date(ev.time);
+  document.getElementById("time").value=t.toTimeString().slice(0,5);
+
+  document.getElementById("category").value=ev.category;
+  document.getElementById("repeat").checked=ev.repeat;
+
+  document.getElementById("deleteBtn").style.display="block";
 }
 
+/* SAVE */
 function save(){
   const title=document.getElementById("title").value;
   const time=document.getElementById("time").value;
   const category=document.getElementById("category").value;
   const repeat=document.getElementById("repeat").checked;
 
-  const date=new Date(current.getFullYear(),current.getMonth(),selectedDay);
+  if(!title || !time) {
+    alert("Fill out all fields");
+    return;
+  }
 
+  const date=new Date(current.getFullYear(),current.getMonth(),selectedDay);
   const full=new Date(`${date.toISOString().split('T')[0]}T${time}`);
 
-  const events=getEvents();
-  events.push({
-    id:Date.now(),
-    title,
-    time:full.toISOString(),
-    category,
-    repeat
-  });
+  let events=getEvents();
+
+  if(selectedEventId){
+    events = events.map(e =>
+      e.id===selectedEventId
+        ? {...e,title,time:full.toISOString(),category,repeat}
+        : e
+    );
+  } else {
+    events.push({
+      id:Date.now(),
+      title,
+      time:full.toISOString(),
+      category,
+      repeat
+    });
+  }
 
   saveEvents(events);
 
@@ -211,6 +262,24 @@ function save(){
   render();
 }
 
+/* DELETE */
+function deleteEvent(){
+  let events=getEvents();
+  events=events.filter(e=>e.id!==selectedEventId);
+
+  saveEvents(events);
+
+  closeModal();
+  render();
+}
+
+/* CLOSE */
+function closeModal(){
+  document.getElementById("modal").style.display="none";
+  selectedEventId=null;
+}
+
+/* NAV */
 function prev(){
   current.setMonth(current.getMonth()-1);
   render();
