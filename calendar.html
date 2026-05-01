@@ -1,340 +1,58 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calendar</title>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-<style>
-body {
-  margin:0;
-  font-family:-apple-system,sans-serif;
-  background:#031024;
-  color:white;
+// 🔥 YOUR FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyC6xEf74Z0CdT3LkLysk5-CLvEbGpjyFBs",
+  authDomain: "family-hub-717fc.firebaseapp.com",
+  projectId: "family-hub-717fc",
+  storageBucket: "family-hub-717fc.firebasestorage.app",
+  messagingSenderId: "560654240272",
+  appId: "1:560654240272:web:31df371ef66f2ba7d11895",
+  measurementId: "G-5YFJXZHBTJ"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// 📅 LOAD EVENTS
+async function loadEvents() {
+  const querySnapshot = await getDocs(collection(db, "events"));
+
+  const events = [];
+
+  querySnapshot.forEach((doc) => {
+    events.push(doc.data());
+  });
+
+  renderEvents(events);
 }
 
-/* ===== HEADER ===== */
-.topbar {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:16px 20px;
-  border-bottom:1px solid rgba(255,255,255,0.08);
+// 🧠 RENDER INTO CALENDAR
+function renderEvents(events) {
+  events.forEach(event => {
+    const day = new Date(event.date).getDate();
+
+    const cell = document.querySelector(`[data-day='${day}']`);
+
+    if (cell) {
+      const el = document.createElement("div");
+      el.className = "event";
+      el.innerText = `${formatTime(event.time)} - ${event.title}`;
+      cell.appendChild(el);
+    }
+  });
 }
 
-.left, .center, .right {
-  display:flex;
-  align-items:center;
+// ⏰ FORMAT TIME
+function formatTime(time) {
+  const [h, m] = time.split(":");
+  let hour = parseInt(h);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  hour = hour % 12 || 12;
+  return `${hour}:${m} ${ampm}`;
 }
 
-.center {
-  font-size:18px;
-  font-weight:600;
-  letter-spacing:1px;
-}
-
-.home-btn, .nav-btn {
-  background:rgba(255,255,255,0.08);
-  border:none;
-  border-radius:10px;
-  padding:10px 14px;
-  color:white;
-  font-size:14px;
-  backdrop-filter:blur(10px);
-}
-
-.right .nav-btn {
-  margin-left:8px;
-}
-
-/* ===== CALENDAR GRID ===== */
-.calendar {
-  display:grid;
-  grid-template-columns:repeat(7,1fr);
-  gap:8px;
-  padding:20px;
-}
-
-.day {
-  background:rgba(255,255,255,0.08);
-  border-radius:14px;
-  padding:8px;
-  min-height:90px;
-  font-size:12px;
-}
-
-.day-header {
-  font-weight:600;
-  margin-bottom:6px;
-}
-
-.event {
-  font-size:11px;
-  padding:3px 6px;
-  border-radius:6px;
-  margin-bottom:4px;
-  cursor:pointer;
-}
-
-.family { background:#4da6ff; }
-.work { background:#ff9f43; }
-.travel { background:#10ac84; }
-
-/* ===== MODAL ===== */
-.modal {
-  position:fixed;
-  bottom:0;
-  width:100%;
-  background:#02142b;
-  padding:20px;
-  border-top-left-radius:20px;
-  border-top-right-radius:20px;
-}
-
-input, textarea, select, button {
-  width:100%;
-  padding:12px;
-  margin-bottom:10px;
-  border:none;
-  border-radius:10px;
-}
-
-textarea {
-  height:80px;
-  resize:none;
-}
-
-button {
-  background:#4da6ff;
-  color:white;
-}
-
-.delete {
-  background:#ff5c5c;
-}
-</style>
-</head>
-
-<body>
-
-<!-- HEADER -->
-<div class="topbar">
-  <div class="left">
-    <button class="home-btn" onclick="goHome()">🏠</button>
-  </div>
-
-  <div class="center" id="month"></div>
-
-  <div class="right">
-    <button class="nav-btn" onclick="prev()">◀</button>
-    <button class="nav-btn" onclick="next()">▶</button>
-  </div>
-</div>
-
-<!-- CALENDAR -->
-<div class="calendar" id="calendar"></div>
-
-<!-- MODAL -->
-<div class="modal" id="modal" style="display:none;">
-  <div id="dateLabel"></div>
-
-  <input id="title" placeholder="Event name">
-  <textarea id="description" placeholder="Description (optional)"></textarea>
-  <input type="time" id="time">
-
-  <select id="category">
-    <option value="family">Family</option>
-    <option value="work">Work</option>
-    <option value="travel">Travel</option>
-  </select>
-
-  <label>
-    <input type="checkbox" id="repeat"> Weekly repeat
-  </label>
-
-  <button onclick="save()">Save Event</button>
-
-  <button id="deleteBtn" class="delete" onclick="deleteEvent()" style="display:none;">
-    Delete Event
-  </button>
-
-  <button onclick="closeModal()">Close</button>
-</div>
-
-<script>
-
-let current = new Date();
-let selectedDay = null;
-let selectedEventId = null;
-
-/* HOME NAV */
-function goHome(){
-  window.location.href = "index.html";
-}
-
-/* STORAGE */
-function getEvents(){
-  return JSON.parse(localStorage.getItem("events")||"[]");
-}
-
-function saveEvents(events){
-  localStorage.setItem("events",JSON.stringify(events));
-}
-
-/* RENDER */
-function render(){
-  const y=current.getFullYear();
-  const m=current.getMonth();
-
-  document.getElementById("month").innerText =
-    current.toLocaleString('default',{month:'long',year:'numeric'});
-
-  const first=new Date(y,m,1).getDay();
-  const days=new Date(y,m+1,0).getDate();
-
-  const cal=document.getElementById("calendar");
-  cal.innerHTML="";
-
-  for(let i=0;i<first;i++) cal.innerHTML+="<div></div>";
-
-  for(let d=1;d<=days;d++){
-    const date=new Date(y,m,d);
-
-    const events=getEvents().filter(e=>{
-      const ed=new Date(e.time);
-
-      if(e.repeat){
-        return ed.getDay()===date.getDay();
-      }
-
-      return ed.toDateString()===date.toDateString();
-    });
-
-    let html=`<div class="day" onclick="openModal(${d})">
-      <div class="day-header">${d}</div>`;
-
-    events.forEach(e=>{
-      html+=`<div class="event ${e.category}"
-        onclick="eventClick(event, ${e.id})">
-        ${new Date(e.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
-      </div>`;
-    });
-
-    html+="</div>";
-    cal.innerHTML+=html;
-  }
-}
-
-/* NEW EVENT */
-function openModal(day){
-  selectedDay=day;
-  selectedEventId=null;
-
-  document.getElementById("modal").style.display="block";
-
-  const date=new Date(current.getFullYear(),current.getMonth(),day);
-  document.getElementById("dateLabel").innerText=date.toDateString();
-
-  document.getElementById("title").value="";
-  document.getElementById("description").value="";
-  document.getElementById("time").value="";
-  document.getElementById("repeat").checked=false;
-
-  document.getElementById("deleteBtn").style.display="none";
-}
-
-/* EDIT EVENT */
-function eventClick(e,id){
-  e.stopPropagation();
-
-  const ev=getEvents().find(x=>x.id===id);
-  selectedEventId=id;
-
-  document.getElementById("modal").style.display="block";
-  document.getElementById("title").value=ev.title;
-  document.getElementById("description").value=ev.description || "";
-
-  const t=new Date(ev.time);
-  document.getElementById("time").value=t.toTimeString().slice(0,5);
-
-  document.getElementById("category").value=ev.category;
-  document.getElementById("repeat").checked=ev.repeat;
-
-  document.getElementById("deleteBtn").style.display="block";
-}
-
-/* SAVE */
-function save(){
-  const title=document.getElementById("title").value;
-  const description=document.getElementById("description").value;
-  const time=document.getElementById("time").value;
-  const category=document.getElementById("category").value;
-  const repeat=document.getElementById("repeat").checked;
-
-  if(!title || !time){
-    alert("Fill out required fields");
-    return;
-  }
-
-  const date=new Date(current.getFullYear(),current.getMonth(),selectedDay);
-  const full=new Date(`${date.toISOString().split('T')[0]}T${time}`);
-
-  let events=getEvents();
-
-  if(selectedEventId){
-    events = events.map(e =>
-      e.id===selectedEventId
-        ? {...e,title,description,time:full.toISOString(),category,repeat}
-        : e
-    );
-  } else {
-    events.push({
-      id:Date.now(),
-      title,
-      description,
-      time:full.toISOString(),
-      category,
-      repeat
-    });
-  }
-
-  saveEvents(events);
-
-  closeModal();
-  render();
-}
-
-/* DELETE */
-function deleteEvent(){
-  let events=getEvents();
-  events=events.filter(e=>e.id!==selectedEventId);
-
-  saveEvents(events);
-
-  closeModal();
-  render();
-}
-
-/* CLOSE */
-function closeModal(){
-  document.getElementById("modal").style.display="none";
-  selectedEventId=null;
-}
-
-/* NAV */
-function prev(){
-  current.setMonth(current.getMonth()-1);
-  render();
-}
-
-function next(){
-  current.setMonth(current.getMonth()+1);
-  render();
-}
-
-render();
-
+loadEvents();
 </script>
-
-</body>
-</html>
