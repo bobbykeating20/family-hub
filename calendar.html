@@ -1,8 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendar</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(180deg, #0a1f44, #07152d);
+  color: white;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.nav {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+  padding: 20px;
+}
+
+.day {
+  background: rgba(255,255,255,0.05);
+  border-radius: 14px;
+  padding: 10px;
+  min-height: 100px;
+  position: relative;
+}
+
+.day-number {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.event {
+  margin-top: 6px;
+  font-size: 12px;
+  background: rgba(255,255,255,0.15);
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="title" id="monthLabel"></div>
+  <div class="nav">
+    <button onclick="changeMonth(-1)">◀</button>
+    <button onclick="changeMonth(1)">▶</button>
+  </div>
+</div>
+
+<div class="calendar" id="calendar"></div>
+
+<!-- 🔥 FIREBASE SCRIPT -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-// 🔥 YOUR FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyC6xEf74Z0CdT3LkLysk5-CLvEbGpjyFBs",
   authDomain: "family-hub-717fc.firebaseapp.com",
@@ -16,36 +99,56 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 📅 LOAD EVENTS
-async function loadEvents() {
-  const querySnapshot = await getDocs(collection(db, "events"));
+let currentDate = new Date();
 
+async function loadCalendar() {
+  const calendar = document.getElementById("calendar");
+  calendar.innerHTML = "";
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  document.getElementById("monthLabel").innerText =
+    currentDate.toLocaleString("default", { month: "long", year: "numeric" });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // 🔥 GET EVENTS FROM FIRESTORE
+  const snapshot = await getDocs(collection(db, "events"));
   const events = [];
+  snapshot.forEach(doc => events.push(doc.data()));
 
-  querySnapshot.forEach((doc) => {
-    events.push(doc.data());
-  });
+  // Empty spaces before first day
+  for (let i = 0; i < firstDay; i++) {
+    calendar.appendChild(document.createElement("div"));
+  }
 
-  renderEvents(events);
+  for (let day = 1; day <= daysInMonth; day++) {
+    const cell = document.createElement("div");
+    cell.className = "day";
+
+    const number = document.createElement("div");
+    number.className = "day-number";
+    number.innerText = day;
+    cell.appendChild(number);
+
+    // 🔥 MATCH EVENTS
+    const thisDate = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+
+    events.forEach(event => {
+      if (event.date === thisDate) {
+        const el = document.createElement("div");
+        el.className = "event";
+        el.innerText = `${formatTime(event.time)} - ${event.title}`;
+        cell.appendChild(el);
+      }
+    });
+
+    calendar.appendChild(cell);
+  }
 }
 
-// 🧠 RENDER INTO CALENDAR
-function renderEvents(events) {
-  events.forEach(event => {
-    const day = new Date(event.date).getDate();
-
-    const cell = document.querySelector(`[data-day='${day}']`);
-
-    if (cell) {
-      const el = document.createElement("div");
-      el.className = "event";
-      el.innerText = `${formatTime(event.time)} - ${event.title}`;
-      cell.appendChild(el);
-    }
-  });
-}
-
-// ⏰ FORMAT TIME
 function formatTime(time) {
   const [h, m] = time.split(":");
   let hour = parseInt(h);
@@ -54,5 +157,13 @@ function formatTime(time) {
   return `${hour}:${m} ${ampm}`;
 }
 
-loadEvents();
+function changeMonth(direction) {
+  currentDate.setMonth(currentDate.getMonth() + direction);
+  loadCalendar();
+}
+
+loadCalendar();
 </script>
+
+</body>
+</html>
