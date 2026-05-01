@@ -9,69 +9,104 @@
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #0a1f44;
+  background: linear-gradient(180deg, #0a1f44, #07152d);
   color: white;
 }
 
+/* HEADER */
 .header {
-  text-align: center;
-  padding: 20px;
-  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+}
+
+.home-btn {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: white;
+}
+
+.month {
+  font-size: 20px;
   font-weight: 600;
 }
 
+.nav {
+  display: flex;
+  gap: 8px;
+}
+
+.nav button {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: white;
+}
+
+/* CALENDAR GRID */
 .calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 10px;
+  gap: 12px;
   padding: 20px;
 }
 
 .day {
-  background: rgba(255,255,255,0.08);
-  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 14px;
   padding: 8px;
-  min-height: 80px;
+  min-height: 90px;
+}
+
+.day-number {
+  font-size: 13px;
+  opacity: 0.7;
 }
 
 .event {
-  font-size: 11px;
-  margin-top: 4px;
-  background: rgba(255,255,255,0.2);
-  padding: 3px 5px;
-  border-radius: 5px;
-}
-
-#error {
-  color: red;
-  text-align: center;
-  margin-top: 10px;
+  margin-top: 6px;
+  font-size: 12px;
+  background: rgba(255,255,255,0.15);
+  padding: 4px 6px;
+  border-radius: 6px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header" id="monthLabel">Loading...</div>
-<div id="error"></div>
+<div class="header">
+  <button class="home-btn" onclick="goHome()">🏠 Home</button>
+  <div class="month" id="monthLabel"></div>
+  <div class="nav">
+    <button onclick="changeMonth(-1)">◀</button>
+    <button onclick="changeMonth(1)">▶</button>
+  </div>
+</div>
+
 <div class="calendar" id="calendar"></div>
 
 <script>
-const calendar = document.getElementById("calendar");
-const monthLabel = document.getElementById("monthLabel");
-const errorDiv = document.getElementById("error");
+let currentDate = new Date();
 
-const today = new Date();
-const year = today.getFullYear();
-const month = today.getMonth();
+function goHome() {
+  window.location.href = "index.html";
+}
 
-monthLabel.innerText = today.toLocaleString("default", { month: "long", year: "numeric" });
+function renderCalendarSkeleton(year, month) {
+  const calendar = document.getElementById("calendar");
+  calendar.innerHTML = "";
 
-// Always render grid FIRST
-function renderEmptyCalendar() {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
+  // empty spaces
   for (let i = 0; i < firstDay; i++) {
     calendar.appendChild(document.createElement("div"));
   }
@@ -81,15 +116,17 @@ function renderEmptyCalendar() {
     cell.className = "day";
     cell.dataset.day = d;
 
-    cell.innerHTML = `<div>${d}</div>`;
+    const num = document.createElement("div");
+    num.className = "day-number";
+    num.innerText = d;
+
+    cell.appendChild(num);
     calendar.appendChild(cell);
   }
 }
-
-renderEmptyCalendar();
 </script>
 
-<!-- FIREBASE (SAFE LOAD) -->
+<!-- FIREBASE -->
 <script type="module">
 try {
   const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js");
@@ -107,30 +144,54 @@ try {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const snapshot = await getDocs(collection(db, "events"));
+  window.loadCalendar = async function () {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
-  snapshot.forEach(doc => {
-    const event = doc.data();
-    const day = new Date(event.date).getDate();
+    document.getElementById("monthLabel").innerText =
+      currentDate.toLocaleString("default", { month: "long", year: "numeric" });
 
-    const cell = document.querySelector(`[data-day='${day}']`);
-    if (!cell) return;
+    renderCalendarSkeleton(year, month);
 
-    const el = document.createElement("div");
-    el.className = "event";
+    const snapshot = await getDocs(collection(db, "events"));
+    const events = [];
+    snapshot.forEach(doc => events.push(doc.data()));
 
-    const [h, m] = event.time.split(":");
+    events.forEach(event => {
+      const dateObj = new Date(event.date);
+      if (
+        dateObj.getFullYear() === year &&
+        dateObj.getMonth() === month
+      ) {
+        const day = dateObj.getDate();
+        const cell = document.querySelector(`[data-day='${day}']`);
+        if (!cell) return;
+
+        const el = document.createElement("div");
+        el.className = "event";
+        el.innerText = `${formatTime(event.time)} - ${event.title}`;
+        cell.appendChild(el);
+      }
+    });
+  };
+
+  function formatTime(time) {
+    const [h, m] = time.split(":");
     let hour = parseInt(h);
     const ampm = hour >= 12 ? "PM" : "AM";
     hour = hour % 12 || 12;
+    return `${hour}:${m} ${ampm}`;
+  }
 
-    el.innerText = `${hour}:${m} ${ampm} - ${event.title}`;
-    cell.appendChild(el);
-  });
+  window.changeMonth = function (dir) {
+    currentDate.setMonth(currentDate.getMonth() + dir);
+    loadCalendar();
+  };
+
+  loadCalendar();
 
 } catch (err) {
   console.error(err);
-  document.getElementById("error").innerText = "Error loading events (check console)";
 }
 </script>
 
