@@ -17,13 +17,7 @@ body {
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   padding: 16px 20px;
-}
-
-.header-left, .header-right {
-  display: flex;
-  gap: 10px;
 }
 
 button {
@@ -40,7 +34,7 @@ button {
   font-weight: 600;
 }
 
-/* GRID */
+/* CALENDAR GRID */
 .calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -53,45 +47,47 @@ button {
   border-radius: 14px;
   padding: 8px;
   min-height: 100px;
-  cursor: pointer;
-  transition: 0.2s;
 }
 
-.day:hover {
-  background: rgba(255,255,255,0.1);
+.day.drag-over {
+  outline: 2px solid white;
 }
 
 .day-number {
-  font-size: 13px;
+  font-size: 12px;
   opacity: 0.7;
 }
 
 .event {
   margin-top: 6px;
-  font-size: 12px;
-  background: rgba(255,255,255,0.2);
   padding: 4px 6px;
   border-radius: 6px;
+  font-size: 12px;
+  cursor: grab;
 }
 
-/* SIDE PANEL (APPLE STYLE) */
+/* COLORS */
+.family { background:#3b82f6; }
+.school { background:#22c55e; }
+.travel { background:#f59e0b; }
+.personal { background:#a855f7; }
+
+/* SIDE PANEL */
 .panel {
   position: fixed;
+  right: -380px;
   top: 0;
-  right: -400px;
   width: 350px;
   height: 100%;
   background: #0f2a55;
-  transition: 0.3s;
   padding: 20px;
+  transition: 0.3s;
   overflow-y: auto;
 }
 
-.panel.open {
-  right: 0;
-}
+.panel.open { right: 0; }
 
-input, textarea {
+input, select, textarea {
   width: 100%;
   margin-bottom: 10px;
   padding: 8px;
@@ -99,17 +95,9 @@ input, textarea {
   border: none;
 }
 
-textarea {
-  height: 80px;
-}
-
-.panel button {
-  width: 100%;
-  margin-top: 5px;
-}
+textarea { height: 70px; }
 
 .event-card {
-  background: rgba(255,255,255,0.1);
   padding: 8px;
   border-radius: 8px;
   margin-bottom: 6px;
@@ -121,14 +109,14 @@ textarea {
 <body>
 
 <div class="header">
-  <div class="header-left">
+  <div>
     <button onclick="window.location.href='index.html'">🏠</button>
     <button onclick="goToday()">Today</button>
   </div>
 
   <div class="month" id="monthLabel"></div>
 
-  <div class="header-right">
+  <div>
     <button onclick="changeMonth(-1)">◀</button>
     <button onclick="changeMonth(1)">▶</button>
   </div>
@@ -136,7 +124,7 @@ textarea {
 
 <div class="calendar" id="calendar"></div>
 
-<!-- SIDE PANEL -->
+<!-- PANEL -->
 <div class="panel" id="panel">
   <h2 id="panelDate"></h2>
 
@@ -146,6 +134,18 @@ textarea {
 
   <input type="text" id="titleInput" placeholder="Title">
   <input type="time" id="timeInput">
+
+  <label>
+    <input type="checkbox" id="allDay"> All Day
+  </label>
+
+  <select id="categoryInput">
+    <option value="family">Family</option>
+    <option value="school">School</option>
+    <option value="travel">Travel</option>
+    <option value="personal">Personal</option>
+  </select>
+
   <textarea id="descInput" placeholder="Description"></textarea>
 
   <button onclick="saveEvent()">Save</button>
@@ -159,150 +159,178 @@ let selectedDate = null;
 let selectedDocId = null;
 let allEvents = [];
 
-function goToday() {
+function goToday(){
   currentDate = new Date();
   loadCalendar();
 }
 
-function changeMonth(dir) {
-  currentDate.setMonth(currentDate.getMonth() + dir);
+function changeMonth(dir){
+  currentDate.setMonth(currentDate.getMonth()+dir);
   loadCalendar();
 }
 
-function renderCalendar(year, month) {
+function formatDate(y,m,d){
+  return new Date(y,m,d).toISOString().split("T")[0];
+}
+
+function renderCalendar(y,m){
   const cal = document.getElementById("calendar");
   cal.innerHTML = "";
 
-  const firstDay = new Date(year, month, 1).getDay();
-  const days = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(y,m,1).getDay();
+  const days = new Date(y,m+1,0).getDate();
 
-  for (let i = 0; i < firstDay; i++) {
+  for(let i=0;i<firstDay;i++){
     cal.appendChild(document.createElement("div"));
   }
 
-  for (let d = 1; d <= days; d++) {
+  for(let d=1; d<=days; d++){
     const cell = document.createElement("div");
-    cell.className = "day";
+    cell.className="day";
+
+    const dateStr = formatDate(y,m,d);
+
+    cell.ondragover = e => {
+      e.preventDefault();
+      cell.classList.add("drag-over");
+    };
+
+    cell.ondragleave = () => cell.classList.remove("drag-over");
+
+    cell.ondrop = async (e)=>{
+      const id = e.dataTransfer.getData("id");
+      await updateEventDate(id,dateStr);
+      cell.classList.remove("drag-over");
+      loadCalendar();
+    };
 
     const num = document.createElement("div");
-    num.className = "day-number";
-    num.innerText = d;
-
+    num.className="day-number";
+    num.innerText=d;
     cell.appendChild(num);
 
-    const dayEvents = allEvents.filter(e => e.date === formatDate(year, month, d));
+    const events = allEvents.filter(e=>e.date===dateStr);
 
-    dayEvents.forEach(e => {
+    events.forEach(e=>{
       const el = document.createElement("div");
-      el.className = "event";
-      el.innerText = e.title;
+      el.className = `event ${e.category || "family"}`;
+      el.innerText = e.allDay ? e.title : `${e.time} ${e.title}`;
+      el.draggable = true;
+
+      el.ondragstart = ev=>{
+        ev.dataTransfer.setData("id",e.id);
+      };
+
+      el.onclick = (ev)=>{
+        ev.stopPropagation();
+        openPanel(y,m,d,e);
+      };
+
       cell.appendChild(el);
     });
 
-    cell.onclick = () => openPanel(year, month, d);
+    cell.onclick=()=>openPanel(y,m,d);
 
     cal.appendChild(cell);
   }
 }
 
-function openPanel(y, m, d) {
-  selectedDate = formatDate(y, m, d);
-  document.getElementById("panel").classList.add("open");
+function openPanel(y,m,d,event=null){
+  selectedDate = formatDate(y,m,d);
+  selectedDocId = event?.id || null;
 
-  document.getElementById("panelDate").innerText =
-    new Date(y, m, d).toDateString();
+  document.getElementById("panel").classList.add("open");
+  document.getElementById("panelDate").innerText = new Date(y,m,d).toDateString();
+
+  document.getElementById("titleInput").value = event?.title || "";
+  document.getElementById("timeInput").value = event?.time || "";
+  document.getElementById("descInput").value = event?.description || "";
+  document.getElementById("categoryInput").value = event?.category || "family";
+  document.getElementById("allDay").checked = event?.allDay || false;
 
   renderEventList();
 }
 
-function closePanel() {
+function closePanel(){
   document.getElementById("panel").classList.remove("open");
-  selectedDocId = null;
+  selectedDocId=null;
 }
 
-function renderEventList() {
+function renderEventList(){
   const list = document.getElementById("eventList");
-  list.innerHTML = "";
+  list.innerHTML="";
 
-  const events = allEvents.filter(e => e.date === selectedDate);
-
-  events.forEach(e => {
+  allEvents.filter(e=>e.date===selectedDate).forEach(e=>{
     const div = document.createElement("div");
-    div.className = "event-card";
-    div.innerText = `${e.time} - ${e.title}`;
+    div.className = `event-card ${e.category}`;
+    div.innerText = `${e.time || "All Day"} - ${e.title}`;
 
-    div.onclick = () => {
+    div.onclick = ()=>{
       selectedDocId = e.id;
-      document.getElementById("titleInput").value = e.title;
-      document.getElementById("timeInput").value = e.time;
-      document.getElementById("descInput").value = e.description || "";
+      openPanel(...selectedDate.split("-").map((v,i)=>i==1?v-1:v),e);
     };
 
     list.appendChild(div);
   });
-}
-
-function formatDate(y, m, d) {
-  return new Date(y, m, d).toISOString().split("T")[0];
 }
 </script>
 
 <script type="module">
 const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js");
 const { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc } =
-  await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
+await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
 
 const firebaseConfig = {
-  apiKey: "AIza...",
-  authDomain: "family-hub-717fc.firebaseapp.com",
-  projectId: "family-hub-717fc",
+  apiKey:"AIza...",
+  authDomain:"family-hub-717fc.firebaseapp.com",
+  projectId:"family-hub-717fc"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.loadCalendar = async function () {
-  const snap = await getDocs(collection(db, "events"));
-  allEvents = [];
+window.loadCalendar = async ()=>{
+  const snap = await getDocs(collection(db,"events"));
+  allEvents = snap.docs.map(d=>({...d.data(),id:d.id}));
 
-  snap.forEach(d => {
-    allEvents.push({ ...d.data(), id: d.id });
-  });
-
-  const y = currentDate.getFullYear();
-  const m = currentDate.getMonth();
+  const y=currentDate.getFullYear();
+  const m=currentDate.getMonth();
 
   document.getElementById("monthLabel").innerText =
-    currentDate.toLocaleString("default", { month: "long", year: "numeric" });
+    currentDate.toLocaleString("default",{month:"long",year:"numeric"});
 
-  renderCalendar(y, m);
+  renderCalendar(y,m);
 };
 
-window.saveEvent = async function () {
+window.saveEvent = async ()=>{
   const data = {
-    title: titleInput.value,
-    time: timeInput.value,
-    date: selectedDate,
-    description: descInput.value
+    title:titleInput.value,
+    time:timeInput.value,
+    date:selectedDate,
+    description:descInput.value,
+    category:categoryInput.value,
+    allDay:allDay.checked
   };
 
-  if (selectedDocId) {
-    await updateDoc(doc(db, "events", selectedDocId), data);
+  if(selectedDocId){
+    await updateDoc(doc(db,"events",selectedDocId),data);
   } else {
-    await addDoc(collection(db, "events"), data);
+    await addDoc(collection(db,"events"),data);
   }
 
-  selectedDocId = null;
+  selectedDocId=null;
   loadCalendar();
-  renderEventList();
 };
 
-window.deleteEvent = async function () {
-  if (!selectedDocId) return;
-  await deleteDoc(doc(db, "events", selectedDocId));
-  selectedDocId = null;
+window.deleteEvent = async ()=>{
+  if(!selectedDocId) return;
+  await deleteDoc(doc(db,"events",selectedDocId));
+  selectedDocId=null;
   loadCalendar();
-  renderEventList();
+};
+
+window.updateEventDate = async (id,newDate)=>{
+  await updateDoc(doc(db,"events",id),{date:newDate});
 };
 
 loadCalendar();
