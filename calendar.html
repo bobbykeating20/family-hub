@@ -3,105 +3,64 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Family Calendar</title>
+<title>Keating Family Hub</title>
 
 <style>
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: linear-gradient(180deg, #0a1f44, #07152d);
-  color: white;
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont;
+  background:linear-gradient(180deg,#0a1f44,#07152d);
+  color:white;
 }
 
-/* HEADER */
 .header {
-  display: flex;
-  justify-content: space-between;
-  padding: 16px 20px;
+  text-align:center;
+  padding:20px;
 }
 
-button {
-  background: rgba(255,255,255,0.1);
-  border: none;
-  padding: 10px 14px;
-  border-radius: 10px;
-  color: white;
-  cursor: pointer;
+.title {
+  font-size:28px;
+  letter-spacing:2px;
 }
 
-.month {
-  font-size: 22px;
-  font-weight: 600;
+.greeting {
+  opacity:0.7;
 }
 
-/* CALENDAR GRID */
-.calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 12px;
-  padding: 20px;
+.grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  padding:20px;
 }
 
-.day {
-  background: rgba(255,255,255,0.05);
-  border-radius: 14px;
-  padding: 8px;
-  min-height: 100px;
+.card {
+  background:rgba(255,255,255,0.08);
+  border-radius:16px;
+  padding:20px;
 }
 
-.day.drag-over {
-  outline: 2px solid white;
+.big {
+  font-size:36px;
 }
 
-.day-number {
-  font-size: 12px;
-  opacity: 0.7;
+.schedule {
+  grid-column: span 2;
 }
 
 .event {
-  margin-top: 6px;
-  padding: 4px 6px;
-  border-radius: 6px;
-  font-size: 12px;
-  cursor: grab;
+  margin-top:6px;
+  opacity:0.9;
 }
 
-/* COLORS */
-.family { background:#3b82f6; }
-.school { background:#22c55e; }
-.travel { background:#f59e0b; }
-.personal { background:#a855f7; }
-
-/* SIDE PANEL */
-.panel {
-  position: fixed;
-  right: -380px;
-  top: 0;
-  width: 350px;
-  height: 100%;
-  background: #0f2a55;
-  padding: 20px;
-  transition: 0.3s;
-  overflow-y: auto;
-}
-
-.panel.open { right: 0; }
-
-input, select, textarea {
-  width: 100%;
-  margin-bottom: 10px;
-  padding: 8px;
-  border-radius: 6px;
-  border: none;
-}
-
-textarea { height: 70px; }
-
-.event-card {
-  padding: 8px;
-  border-radius: 8px;
-  margin-bottom: 6px;
-  cursor: pointer;
+.button {
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:#3b82f6;
+  padding:12px 16px;
+  border-radius:12px;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -109,176 +68,44 @@ textarea { height: 70px; }
 <body>
 
 <div class="header">
-  <div>
-    <button onclick="window.location.href='index.html'">🏠</button>
-    <button onclick="goToday()">Today</button>
+  <div class="title">KEATING FAMILY HUB</div>
+  <div class="greeting" id="greeting"></div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <div class="big" id="time"></div>
+    <div id="date"></div>
   </div>
 
-  <div class="month" id="monthLabel"></div>
+  <div class="card">
+    🌤 53° • Lynchburg
+  </div>
 
-  <div>
-    <button onclick="changeMonth(-1)">◀</button>
-    <button onclick="changeMonth(1)">▶</button>
+  <div class="card">
+    🎂 Lauren turns 31 in 40 days
+  </div>
+
+  <div class="card">
+    ✈️ Disney Trip in 39 days
+  </div>
+
+  <div class="card schedule">
+    <h3>Schedule</h3>
+    <div id="nextEvent"></div>
+    <div id="scheduleList"></div>
   </div>
 </div>
 
-<div class="calendar" id="calendar"></div>
-
-<!-- PANEL -->
-<div class="panel" id="panel">
-  <h2 id="panelDate"></h2>
-
-  <div id="eventList"></div>
-
-  <hr>
-
-  <input type="text" id="titleInput" placeholder="Title">
-  <input type="time" id="timeInput">
-
-  <label>
-    <input type="checkbox" id="allDay"> All Day
-  </label>
-
-  <select id="categoryInput">
-    <option value="family">Family</option>
-    <option value="school">School</option>
-    <option value="travel">Travel</option>
-    <option value="personal">Personal</option>
-  </select>
-
-  <textarea id="descInput" placeholder="Description"></textarea>
-
-  <button onclick="saveEvent()">Save</button>
-  <button onclick="deleteEvent()" style="background:red;">Delete</button>
-  <button onclick="closePanel()">Close</button>
+<div class="button" onclick="window.location.href='calendar.html'">
+📅 Calendar
 </div>
-
-<script>
-let currentDate = new Date();
-let selectedDate = null;
-let selectedDocId = null;
-let allEvents = [];
-
-function goToday(){
-  currentDate = new Date();
-  loadCalendar();
-}
-
-function changeMonth(dir){
-  currentDate.setMonth(currentDate.getMonth()+dir);
-  loadCalendar();
-}
-
-function formatDate(y,m,d){
-  return new Date(y,m,d).toISOString().split("T")[0];
-}
-
-function renderCalendar(y,m){
-  const cal = document.getElementById("calendar");
-  cal.innerHTML = "";
-
-  const firstDay = new Date(y,m,1).getDay();
-  const days = new Date(y,m+1,0).getDate();
-
-  for(let i=0;i<firstDay;i++){
-    cal.appendChild(document.createElement("div"));
-  }
-
-  for(let d=1; d<=days; d++){
-    const cell = document.createElement("div");
-    cell.className="day";
-
-    const dateStr = formatDate(y,m,d);
-
-    cell.ondragover = e => {
-      e.preventDefault();
-      cell.classList.add("drag-over");
-    };
-
-    cell.ondragleave = () => cell.classList.remove("drag-over");
-
-    cell.ondrop = async (e)=>{
-      const id = e.dataTransfer.getData("id");
-      await updateEventDate(id,dateStr);
-      cell.classList.remove("drag-over");
-      loadCalendar();
-    };
-
-    const num = document.createElement("div");
-    num.className="day-number";
-    num.innerText=d;
-    cell.appendChild(num);
-
-    const events = allEvents.filter(e=>e.date===dateStr);
-
-    events.forEach(e=>{
-      const el = document.createElement("div");
-      el.className = `event ${e.category || "family"}`;
-      el.innerText = e.allDay ? e.title : `${e.time} ${e.title}`;
-      el.draggable = true;
-
-      el.ondragstart = ev=>{
-        ev.dataTransfer.setData("id",e.id);
-      };
-
-      el.onclick = (ev)=>{
-        ev.stopPropagation();
-        openPanel(y,m,d,e);
-      };
-
-      cell.appendChild(el);
-    });
-
-    cell.onclick=()=>openPanel(y,m,d);
-
-    cal.appendChild(cell);
-  }
-}
-
-function openPanel(y,m,d,event=null){
-  selectedDate = formatDate(y,m,d);
-  selectedDocId = event?.id || null;
-
-  document.getElementById("panel").classList.add("open");
-  document.getElementById("panelDate").innerText = new Date(y,m,d).toDateString();
-
-  document.getElementById("titleInput").value = event?.title || "";
-  document.getElementById("timeInput").value = event?.time || "";
-  document.getElementById("descInput").value = event?.description || "";
-  document.getElementById("categoryInput").value = event?.category || "family";
-  document.getElementById("allDay").checked = event?.allDay || false;
-
-  renderEventList();
-}
-
-function closePanel(){
-  document.getElementById("panel").classList.remove("open");
-  selectedDocId=null;
-}
-
-function renderEventList(){
-  const list = document.getElementById("eventList");
-  list.innerHTML="";
-
-  allEvents.filter(e=>e.date===selectedDate).forEach(e=>{
-    const div = document.createElement("div");
-    div.className = `event-card ${e.category}`;
-    div.innerText = `${e.time || "All Day"} - ${e.title}`;
-
-    div.onclick = ()=>{
-      selectedDocId = e.id;
-      openPanel(...selectedDate.split("-").map((v,i)=>i==1?v-1:v),e);
-    };
-
-    list.appendChild(div);
-  });
-}
-</script>
 
 <script type="module">
-const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js");
-const { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc } =
-await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import {
+  getFirestore, collection, getDocs
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey:"AIza...",
@@ -289,51 +116,86 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.loadCalendar = async ()=>{
+function updateClock(){
+  const now = new Date();
+
+  document.getElementById("time").innerText =
+    now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+
+  document.getElementById("date").innerText =
+    now.toDateString();
+
+  const h = now.getHours();
+  let greet = "Good evening";
+  if(h < 12) greet="Good morning";
+  else if(h < 17) greet="Good afternoon";
+
+  document.getElementById("greeting").innerText = greet;
+}
+
+setInterval(updateClock,1000);
+updateClock();
+
+/* LOAD EVENTS */
+async function loadEvents(){
   const snap = await getDocs(collection(db,"events"));
-  allEvents = snap.docs.map(d=>({...d.data(),id:d.id}));
+  const events = snap.docs.map(d=>d.data());
 
-  const y=currentDate.getFullYear();
-  const m=currentDate.getMonth();
+  const now = new Date();
 
-  document.getElementById("monthLabel").innerText =
-    currentDate.toLocaleString("default",{month:"long",year:"numeric"});
+  const upcoming = events
+    .map(e=>{
+      const dt = new Date(e.date+"T"+(e.time || "00:00"));
+      return {...e, dt};
+    })
+    .filter(e=>e.dt > now)
+    .sort((a,b)=>a.dt-b.dt);
 
-  renderCalendar(y,m);
-};
-
-window.saveEvent = async ()=>{
-  const data = {
-    title:titleInput.value,
-    time:timeInput.value,
-    date:selectedDate,
-    description:descInput.value,
-    category:categoryInput.value,
-    allDay:allDay.checked
-  };
-
-  if(selectedDocId){
-    await updateDoc(doc(db,"events",selectedDocId),data);
-  } else {
-    await addDoc(collection(db,"events"),data);
+  if(upcoming.length){
+    const diff = Math.round((upcoming[0].dt - now)/3600000);
+    document.getElementById("nextEvent").innerText =
+      `Next event in ${diff} hours`;
   }
 
-  selectedDocId=null;
-  loadCalendar();
-};
+  const list = document.getElementById("scheduleList");
+  list.innerHTML="";
 
-window.deleteEvent = async ()=>{
-  if(!selectedDocId) return;
-  await deleteDoc(doc(db,"events",selectedDocId));
-  selectedDocId=null;
-  loadCalendar();
-};
+  upcoming.slice(0,10).forEach(e=>{
+    const div = document.createElement("div");
+    div.className="event";
+    div.innerText = `${e.dt.toDateString()} - ${e.time || "All Day"} ${e.title}`;
+    list.appendChild(div);
+  });
 
-window.updateEventDate = async (id,newDate)=>{
-  await updateDoc(doc(db,"events",id),{date:newDate});
-};
+  scheduleNotifications(upcoming);
+}
 
-loadCalendar();
+/* 🔔 NOTIFICATIONS */
+function scheduleNotifications(events){
+  if(Notification.permission !== "granted"){
+    Notification.requestPermission();
+    return;
+  }
+
+  const now = new Date();
+
+  events.forEach(e=>{
+    const diff = e.dt - now;
+
+    if(diff > 0 && diff < 3600000){
+      setTimeout(()=>{
+        new Notification("Upcoming Event",{
+          body:e.title
+        });
+      }, diff - 60000);
+    }
+  });
+}
+
+loadEvents();
+
+/* AUTO REFRESH (TV MODE) */
+setInterval(loadEvents,60000);
 </script>
 
 </body>
