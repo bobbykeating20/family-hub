@@ -79,7 +79,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.75);
   display: none;
   align-items: center;
   justify-content: center;
@@ -88,11 +88,15 @@ body {
 .modal-content {
   background: #0f2a55;
   padding: 20px;
-  border-radius: 12px;
-  width: 300px;
+  border-radius: 14px;
+  width: 320px;
 }
 
-input {
+.modal h3 {
+  margin-top: 0;
+}
+
+input, textarea {
   width: 100%;
   margin-bottom: 10px;
   padding: 8px;
@@ -100,10 +104,23 @@ input {
   border: none;
 }
 
+textarea {
+  resize: none;
+  height: 70px;
+}
+
 .modal button {
   margin-top: 6px;
   width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
+
+.save { background: #4caf50; color: white; }
+.delete { background: red; color: white; }
+.cancel { background: #999; }
 </style>
 </head>
 
@@ -127,19 +144,21 @@ input {
 <!-- MODAL -->
 <div class="modal" id="modal">
   <div class="modal-content">
-    <h3 id="modalTitle">Add Event</h3>
+    <h3 id="modalTitle">Event</h3>
+
+    <input type="date" id="dateInput">
     <input type="text" id="titleInput" placeholder="Event title">
     <input type="time" id="timeInput">
+    <textarea id="descInput" placeholder="Description (optional)"></textarea>
 
-    <button onclick="saveEvent()">Save</button>
-    <button onclick="deleteEvent()" id="deleteBtn" style="background:red;">Delete</button>
-    <button onclick="closeModal()">Cancel</button>
+    <button class="save" onclick="saveEvent()">Save</button>
+    <button class="delete" onclick="deleteEvent()" id="deleteBtn">Delete</button>
+    <button class="cancel" onclick="closeModal()">Cancel</button>
   </div>
 </div>
 
 <script>
 let currentDate = new Date();
-let selectedDate = null;
 let selectedDocId = null;
 
 function changeMonth(dir) {
@@ -161,9 +180,8 @@ function renderSkeleton(year, month) {
   for (let d = 1; d <= daysInMonth; d++) {
     const cell = document.createElement("div");
     cell.className = "day";
-    cell.dataset.day = d;
 
-    cell.onclick = () => openModal(year, month, d);
+    cell.onclick = () => openModal(new Date(year, month, d));
 
     const num = document.createElement("div");
     num.className = "day-number";
@@ -175,7 +193,6 @@ function renderSkeleton(year, month) {
 }
 </script>
 
-<!-- FIREBASE -->
 <script type="module">
 const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js");
 const { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc } =
@@ -209,10 +226,8 @@ window.loadCalendar = async function () {
     const id = docSnap.id;
 
     const [y, m, d] = event.date.split("-").map(Number);
-    const dateObj = new Date(y, m - 1, d);
-
-    if (dateObj.getFullYear() === year && dateObj.getMonth() === month) {
-      const cell = document.querySelector(`[data-day='${d}']`);
+    if (y === year && (m - 1) === month) {
+      const cell = document.querySelectorAll(".day")[d - 1];
       if (!cell) return;
 
       const el = document.createElement("div");
@@ -221,7 +236,7 @@ window.loadCalendar = async function () {
 
       el.onclick = (e) => {
         e.stopPropagation();
-        openModal(y, m - 1, d, event, id);
+        openModal(new Date(y, m - 1, d), event, id);
       };
 
       cell.appendChild(el);
@@ -229,14 +244,17 @@ window.loadCalendar = async function () {
   });
 };
 
-window.openModal = function (y, m, d, event = null, id = null) {
-  selectedDate = new Date(y, m, d);
+window.openModal = function (date, event = null, id = null) {
   selectedDocId = id;
 
   document.getElementById("modal").style.display = "flex";
 
+  document.getElementById("dateInput").value =
+    event?.date || date.toISOString().split("T")[0];
+
   document.getElementById("titleInput").value = event?.title || "";
   document.getElementById("timeInput").value = event?.time || "";
+  document.getElementById("descInput").value = event?.description || "";
 
   document.getElementById("deleteBtn").style.display = id ? "block" : "none";
 };
@@ -246,15 +264,17 @@ window.closeModal = function () {
 };
 
 window.saveEvent = async function () {
-  const title = document.getElementById("titleInput").value;
-  const time = document.getElementById("timeInput").value;
-
-  const dateStr = selectedDate.toISOString().split("T")[0];
+  const data = {
+    title: document.getElementById("titleInput").value,
+    time: document.getElementById("timeInput").value,
+    date: document.getElementById("dateInput").value,
+    description: document.getElementById("descInput").value
+  };
 
   if (selectedDocId) {
-    await updateDoc(doc(db, "events", selectedDocId), { title, time, date: dateStr });
+    await updateDoc(doc(db, "events", selectedDocId), data);
   } else {
-    await addDoc(collection(db, "events"), { title, time, date: dateStr });
+    await addDoc(collection(db, "events"), data);
   }
 
   closeModal();
