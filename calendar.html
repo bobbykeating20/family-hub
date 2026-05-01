@@ -9,160 +9,129 @@
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: linear-gradient(180deg, #0a1f44, #07152d);
+  background: #0a1f44;
   color: white;
 }
 
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  text-align: center;
   padding: 20px;
-}
-
-.title {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 600;
-}
-
-.nav {
-  display: flex;
-  gap: 10px;
-}
-
-button {
-  background: rgba(255,255,255,0.1);
-  border: none;
-  color: white;
-  padding: 10px 14px;
-  border-radius: 10px;
-  cursor: pointer;
 }
 
 .calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 12px;
+  gap: 10px;
   padding: 20px;
 }
 
 .day {
-  background: rgba(255,255,255,0.05);
-  border-radius: 14px;
-  padding: 10px;
-  min-height: 100px;
-  position: relative;
-}
-
-.day-number {
-  font-size: 14px;
-  opacity: 0.7;
+  background: rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 8px;
+  min-height: 80px;
 }
 
 .event {
-  margin-top: 6px;
-  font-size: 12px;
-  background: rgba(255,255,255,0.15);
-  padding: 4px 6px;
-  border-radius: 6px;
+  font-size: 11px;
+  margin-top: 4px;
+  background: rgba(255,255,255,0.2);
+  padding: 3px 5px;
+  border-radius: 5px;
+}
+
+#error {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-  <div class="title" id="monthLabel"></div>
-  <div class="nav">
-    <button onclick="changeMonth(-1)">◀</button>
-    <button onclick="changeMonth(1)">▶</button>
-  </div>
-</div>
-
+<div class="header" id="monthLabel">Loading...</div>
+<div id="error"></div>
 <div class="calendar" id="calendar"></div>
 
-<!-- 🔥 FIREBASE SCRIPT -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+<script>
+const calendar = document.getElementById("calendar");
+const monthLabel = document.getElementById("monthLabel");
+const errorDiv = document.getElementById("error");
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC6xEf74Z0CdT3LkLysk5-CLvEbGpjyFBs",
-  authDomain: "family-hub-717fc.firebaseapp.com",
-  projectId: "family-hub-717fc",
-  storageBucket: "family-hub-717fc.firebasestorage.app",
-  messagingSenderId: "560654240272",
-  appId: "1:560654240272:web:31df371ef66f2ba7d11895",
-  measurementId: "G-5YFJXZHBTJ"
-};
+const today = new Date();
+const year = today.getFullYear();
+const month = today.getMonth();
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+monthLabel.innerText = today.toLocaleString("default", { month: "long", year: "numeric" });
 
-let currentDate = new Date();
-
-async function loadCalendar() {
-  const calendar = document.getElementById("calendar");
-  calendar.innerHTML = "";
-
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-
-  document.getElementById("monthLabel").innerText =
-    currentDate.toLocaleString("default", { month: "long", year: "numeric" });
-
+// Always render grid FIRST
+function renderEmptyCalendar() {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // 🔥 GET EVENTS FROM FIRESTORE
-  const snapshot = await getDocs(collection(db, "events"));
-  const events = [];
-  snapshot.forEach(doc => events.push(doc.data()));
-
-  // Empty spaces before first day
   for (let i = 0; i < firstDay; i++) {
     calendar.appendChild(document.createElement("div"));
   }
 
-  for (let day = 1; day <= daysInMonth; day++) {
+  for (let d = 1; d <= daysInMonth; d++) {
     const cell = document.createElement("div");
     cell.className = "day";
+    cell.dataset.day = d;
 
-    const number = document.createElement("div");
-    number.className = "day-number";
-    number.innerText = day;
-    cell.appendChild(number);
-
-    // 🔥 MATCH EVENTS
-    const thisDate = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-
-    events.forEach(event => {
-      if (event.date === thisDate) {
-        const el = document.createElement("div");
-        el.className = "event";
-        el.innerText = `${formatTime(event.time)} - ${event.title}`;
-        cell.appendChild(el);
-      }
-    });
-
+    cell.innerHTML = `<div>${d}</div>`;
     calendar.appendChild(cell);
   }
 }
 
-function formatTime(time) {
-  const [h, m] = time.split(":");
-  let hour = parseInt(h);
-  const ampm = hour >= 12 ? "PM" : "AM";
-  hour = hour % 12 || 12;
-  return `${hour}:${m} ${ampm}`;
-}
+renderEmptyCalendar();
+</script>
 
-function changeMonth(direction) {
-  currentDate.setMonth(currentDate.getMonth() + direction);
-  loadCalendar();
-}
+<!-- FIREBASE (SAFE LOAD) -->
+<script type="module">
+try {
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js");
+  const { getFirestore, collection, getDocs } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
 
-loadCalendar();
+  const firebaseConfig = {
+    apiKey: "AIzaSyC6xEf74Z0CdT3LkLysk5-CLvEbGpjyFBs",
+    authDomain: "family-hub-717fc.firebaseapp.com",
+    projectId: "family-hub-717fc",
+    storageBucket: "family-hub-717fc.firebasestorage.app",
+    messagingSenderId: "560654240272",
+    appId: "1:560654240272:web:31df371ef66f2ba7d11895"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const snapshot = await getDocs(collection(db, "events"));
+
+  snapshot.forEach(doc => {
+    const event = doc.data();
+    const day = new Date(event.date).getDate();
+
+    const cell = document.querySelector(`[data-day='${day}']`);
+    if (!cell) return;
+
+    const el = document.createElement("div");
+    el.className = "event";
+
+    const [h, m] = event.time.split(":");
+    let hour = parseInt(h);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12 || 12;
+
+    el.innerText = `${hour}:${m} ${ampm} - ${event.title}`;
+    cell.appendChild(el);
+  });
+
+} catch (err) {
+  console.error(err);
+  document.getElementById("error").innerText = "Error loading events (check console)";
+}
 </script>
 
 </body>
