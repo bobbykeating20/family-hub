@@ -15,27 +15,33 @@ body {
 
 /* HEADER */
 .header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   padding: 16px 20px;
 }
 
-.home-btn {
+.home {
+  justify-self: start;
+}
+
+.home button {
   background: rgba(255,255,255,0.1);
   border: none;
   padding: 10px 14px;
   border-radius: 10px;
-  cursor: pointer;
   color: white;
+  cursor: pointer;
 }
 
 .month {
-  font-size: 20px;
+  text-align: center;
+  font-size: 22px;
   font-weight: 600;
 }
 
 .nav {
+  justify-self: end;
   display: flex;
   gap: 8px;
 }
@@ -45,11 +51,11 @@ body {
   border: none;
   padding: 10px 12px;
   border-radius: 10px;
-  cursor: pointer;
   color: white;
+  cursor: pointer;
 }
 
-/* CALENDAR GRID */
+/* GRID */
 .calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -61,7 +67,7 @@ body {
   background: rgba(255,255,255,0.05);
   border-radius: 14px;
   padding: 8px;
-  min-height: 90px;
+  min-height: 100px;
 }
 
 .day-number {
@@ -82,8 +88,12 @@ body {
 <body>
 
 <div class="header">
-  <button class="home-btn" onclick="goHome()">🏠 Home</button>
+  <div class="home">
+    <button onclick="window.location.href='index.html'">🏠 Home</button>
+  </div>
+
   <div class="month" id="monthLabel"></div>
+
   <div class="nav">
     <button onclick="changeMonth(-1)">◀</button>
     <button onclick="changeMonth(1)">▶</button>
@@ -95,18 +105,18 @@ body {
 <script>
 let currentDate = new Date();
 
-function goHome() {
-  window.location.href = "index.html";
+function changeMonth(direction) {
+  currentDate.setMonth(currentDate.getMonth() + direction);
+  loadCalendar();
 }
 
-function renderCalendarSkeleton(year, month) {
+function renderSkeleton(year, month) {
   const calendar = document.getElementById("calendar");
   calendar.innerHTML = "";
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // empty spaces
   for (let i = 0; i < firstDay; i++) {
     calendar.appendChild(document.createElement("div"));
   }
@@ -128,71 +138,61 @@ function renderCalendarSkeleton(year, month) {
 
 <!-- FIREBASE -->
 <script type="module">
-try {
-  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js");
-  const { getFirestore, collection, getDocs } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
+const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js");
+const { getFirestore, collection, getDocs } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js");
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyC6xEf74Z0CdT3LkLysk5-CLvEbGpjyFBs",
-    authDomain: "family-hub-717fc.firebaseapp.com",
-    projectId: "family-hub-717fc",
-    storageBucket: "family-hub-717fc.firebasestorage.app",
-    messagingSenderId: "560654240272",
-    appId: "1:560654240272:web:31df371ef66f2ba7d11895"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyC6xEf74Z0CdT3LkLysk5-CLvEbGpjyFBs",
+  authDomain: "family-hub-717fc.firebaseapp.com",
+  projectId: "family-hub-717fc",
+  storageBucket: "family-hub-717fc.firebasestorage.app",
+  messagingSenderId: "560654240272",
+  appId: "1:560654240272:web:31df371ef66f2ba7d11895"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  window.loadCalendar = async function () {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+window.loadCalendar = async function () {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
 
-    document.getElementById("monthLabel").innerText =
-      currentDate.toLocaleString("default", { month: "long", year: "numeric" });
+  document.getElementById("monthLabel").innerText =
+    currentDate.toLocaleString("default", { month: "long", year: "numeric" });
 
-    renderCalendarSkeleton(year, month);
+  renderSkeleton(year, month);
 
-    const snapshot = await getDocs(collection(db, "events"));
-    const events = [];
-    snapshot.forEach(doc => events.push(doc.data()));
+  const snapshot = await getDocs(collection(db, "events"));
+  const events = [];
 
-    events.forEach(event => {
-      const dateObj = new Date(event.date);
-      if (
-        dateObj.getFullYear() === year &&
-        dateObj.getMonth() === month
-      ) {
-        const day = dateObj.getDate();
-        const cell = document.querySelector(`[data-day='${day}']`);
-        if (!cell) return;
+  snapshot.forEach(doc => events.push(doc.data()));
 
-        const el = document.createElement("div");
-        el.className = "event";
-        el.innerText = `${formatTime(event.time)} - ${event.title}`;
-        cell.appendChild(el);
-      }
-    });
-  };
+  events.forEach(event => {
+    // 🔥 FIXED timezone-safe parsing
+    const [y, m, d] = event.date.split("-").map(Number);
+    const dateObj = new Date(y, m - 1, d);
 
-  function formatTime(time) {
-    const [h, m] = time.split(":");
-    let hour = parseInt(h);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    hour = hour % 12 || 12;
-    return `${hour}:${m} ${ampm}`;
-  }
+    if (dateObj.getFullYear() === year && dateObj.getMonth() === month) {
+      const cell = document.querySelector(`[data-day='${d}']`);
+      if (!cell) return;
 
-  window.changeMonth = function (dir) {
-    currentDate.setMonth(currentDate.getMonth() + dir);
-    loadCalendar();
-  };
+      const el = document.createElement("div");
+      el.className = "event";
+      el.innerText = `${formatTime(event.time)} - ${event.title}`;
+      cell.appendChild(el);
+    }
+  });
+};
 
-  loadCalendar();
-
-} catch (err) {
-  console.error(err);
+function formatTime(time) {
+  const [h, m] = time.split(":");
+  let hour = parseInt(h);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  hour = hour % 12 || 12;
+  return `${hour}:${m} ${ampm}`;
 }
+
+loadCalendar();
 </script>
 
 </body>
